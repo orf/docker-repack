@@ -1,0 +1,4 @@
+/target
+oci/
+*.txt
+.idea/
