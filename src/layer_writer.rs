@@ -1,47 +1,67 @@
 use crate::compact_layer::CompactLayer;
-use crate::writer_utils::HashedCounterWriter;
-use const_hex::Buffer;
-use std::borrow::Cow;
-use std::fs::File;
-use std::io::{BufReader, BufWriter, Read};
-use std::path::{Path, PathBuf};
-use flate2::Compression;
-use tar::{Builder, Entry, EntryType};
-use flate2::write::{GzDecoder, GzEncoder};
-use crate::compression::GZIP_LEVEL;
+use crate::compression::ZSTD_LEVEL;
 use crate::image_writer::WrittenBlob;
-// use zstd::Encoder;
+use crate::writer_utils::HashedCounterWriter;
+use anyhow::bail;
+use std::borrow::Cow;
+use std::collections::HashSet;
+use std::fmt::{Display, Formatter};
+use std::fs::File;
+use std::io::{BufReader, Read};
+use std::path::{Path, PathBuf};
+use byte_unit::Byte;
+use tar::{Builder, Entry, EntryType};
+use zstd::Encoder as ZstEncoder;
 
 // type TarBuilder<'a> = Builder<Encoder<'a, BufWriter<HashedCounterWriter<File>>>>;
 // type TarBuilder = Builder<BufWriter<HashedCounterWriter<File>>>;
-type TarBuilder = Builder<HashedCounterWriter<GzEncoder<HashedCounterWriter<File>>>>;
+// type TarBuilder = Builder<HashedCounterWriter<GzEncoder<HashedCounterWriter<File>>>>;
+type TarBuilder<'a> = Builder<HashedCounterWriter<ZstEncoder<'a, HashedCounterWriter<File>>>>;
 
 pub struct LayerWriter<'a> {
     pub path: PathBuf,
-    pub layer: CompactLayer,
+    pub paths: HashSet<PathBuf>,
     // tar_builder: TarBuilder<'a>,
-    tar_builder: TarBuilder,
+    tar_builder: TarBuilder<'a>,
     pub written: usize,
-    include_symlinks: bool,
+    is_directory_layer: bool,
+    pub total_size: Byte,
     a: std::marker::PhantomData<&'a ()>,
 }
 
+fn create_writer<'a>(path: &PathBuf) -> TarBuilder<'a> {
+    let writer = File::create(path).unwrap();
+    let writer = HashedCounterWriter::new(writer);
+    // let writer = GzEncoder::new(writer, GZIP_LEVEL);
+    let writer = ZstEncoder::new(writer, ZSTD_LEVEL).unwrap();
+    let writer = HashedCounterWriter::new(writer);
+
+    Builder::new(writer)
+}
+
 impl LayerWriter<'_> {
-    pub fn create(path: PathBuf, layer: CompactLayer, include_symlinks: bool) -> Self {
-        let writer = File::create(&path).unwrap();
-        // Compressed hasher
-        let writer = HashedCounterWriter::new(writer);
-        let writer = GzEncoder::new(writer, GZIP_LEVEL);
-        // let writer = Encoder::new(writer, 7).unwrap();
-        // Raw hasher
-        let writer = HashedCounterWriter::new(writer);
-        let tar_builder = Builder::new(writer);
+    pub fn create(path: PathBuf, layer: CompactLayer) -> Self {
+        let tar_builder = create_writer(&path.clone());
         Self {
             path,
             tar_builder,
-            layer,
+            paths: layer.paths,
             written: 0,
-            include_symlinks,
+            is_directory_layer: false,
+            total_size: layer.total_size,
+            a: std::marker::PhantomData,
+        }
+    }
+
+    pub fn create_directory_layer(path: PathBuf) -> Self {
+        let tar_builder = create_writer(&path.clone());
+        Self {
+            path,
+            tar_builder,
+            paths: HashSet::new(),
+            written: 0,
+            is_directory_layer: true,
+            total_size: Byte::from(0u64),
             a: std::marker::PhantomData,
         }
     }
@@ -49,7 +69,12 @@ impl LayerWriter<'_> {
     pub fn finish(self) -> anyhow::Result<WrittenBlob> {
         let inner = self.tar_builder.into_inner()?;
         let (inner, raw_bytes_written, raw_hash) = inner.finish();
-        let inner = inner.into_inner()?;
+        let inner = match inner.into_inner() {
+            Ok(v) => v,
+            Err(_) => {
+                bail!("Failed to finish writing layer")
+            }
+        };
         let inner = inner.finish()?;
         let (inner, compressed_bytes_written, compressed_hash) = inner.finish();
         let inner = inner.into_inner()?;
@@ -57,9 +82,9 @@ impl LayerWriter<'_> {
         Ok(WrittenBlob::new(
             self.path,
             compressed_hash,
-            compressed_bytes_written as i64,
+            compressed_bytes_written as u64,
             raw_hash,
-            raw_bytes_written as i64,
+            raw_bytes_written as u64,
         ))
     }
 
@@ -69,14 +94,16 @@ impl LayerWriter<'_> {
         path: &Path,
         link_name: &Option<Cow<Path>>,
     ) -> bool {
+        let is_symlink_or_dir = matches!(entry_type, EntryType::Symlink | EntryType::Directory);
+        if self.is_directory_layer {
+            return is_symlink_or_dir;
+        }
         return match entry_type {
-            EntryType::Regular => self.layer.paths.contains(path),
+            EntryType::Regular => self.paths.contains(path),
             EntryType::Link => {
                 let name = link_name.as_ref().unwrap();
-                self.layer.paths.contains(name.as_ref())
+                self.paths.contains(name.as_ref())
             }
-            EntryType::Symlink => self.include_symlinks,
-            EntryType::Directory => true,
             _ => false,
         };
     }
@@ -100,5 +127,16 @@ impl LayerWriter<'_> {
             }
         }
         self.written += 1;
+    }
+}
+
+impl Display for LayerWriter<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let compressed_size = Byte::from(self.total_size).get_adjusted_unit(byte_unit::Unit::MB);
+        write!(
+            f,
+            "{:?} - is_directory_layer: {} - size: {:#.1}",
+            self.path, self.is_directory_layer, compressed_size
+        )
     }
 }

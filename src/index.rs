@@ -1,9 +1,9 @@
+use crate::compression;
 use byte_unit::Byte;
 use std::io;
 use std::path::PathBuf;
 use tar::EntryType;
 use thiserror::Error;
-use crate::compression;
 
 #[derive(Error, Debug)]
 pub enum EntryError {
@@ -28,7 +28,7 @@ impl LayerIndexItem {
         data: Vec<u8>,
         compression_buffer: &mut Vec<u8>,
     ) -> Result<Self, EntryError> {
-        let compressed_size = compression::calculate_compressed_size_gzip(&data, compression_buffer)?;
+        let compressed_size = compression::calculate_compressed_size(&data, compression_buffer)?;
         Ok(Self {
             entry_path: path,
             entry_type,
