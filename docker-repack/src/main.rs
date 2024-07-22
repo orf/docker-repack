@@ -60,7 +60,11 @@ fn main() -> anyhow::Result<()> {
 
     if let Some(glob_set) = glob_set {
         let (excluded_count, excluded_size) = layer_contents.exclude_globs(glob_set);
-        println!("Excluded {} items ({:#.1})", excluded_count, excluded_size.get_appropriate_unit(UnitType::Decimal));
+        println!(
+            "Excluded {} items ({:#.1})",
+            excluded_count,
+            excluded_size.get_appropriate_unit(UnitType::Decimal)
+        );
     }
 
     println!("Total items in layers: {}", layer_contents.len());

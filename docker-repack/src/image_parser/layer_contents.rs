@@ -1,10 +1,10 @@
 use crate::image_parser::image_reader::SourceLayerID;
 use crate::image_parser::layer_operation::LayerOperations;
 use crate::image_parser::TarItem;
-use std::collections::BTreeMap;
-use std::ops::Bound::{Excluded, Unbounded};
 use byte_unit::Byte;
 use globset::GlobSet;
+use std::collections::BTreeMap;
+use std::ops::Bound::{Excluded, Unbounded};
 use trie_rs::iter::KeysExt;
 
 pub type PathMap = BTreeMap<String, TarItem>;
@@ -64,7 +64,10 @@ impl LayerContents {
         });
         let new_count = self.present_paths.len();
         let new_size = self.present_paths.values().map(|p| p.size).sum::<u64>();
-        (initial_count - new_count, Byte::from(initial_size - new_size))
+        (
+            initial_count - new_count,
+            Byte::from(initial_size - new_size),
+        )
     }
 
     pub fn len(&self) -> usize {

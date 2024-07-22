@@ -1,7 +1,7 @@
-use std::cmp::Ordering;
 use crate::image_parser::image_reader::SourceLayerID;
 use anyhow::bail;
 use sha2::{Digest, Sha256};
+use std::cmp::Ordering;
 use std::io::Read;
 use std::path::PathBuf;
 use tar::{Entry, EntryType};
@@ -51,7 +51,7 @@ impl TarItem {
             EntryType::Symlink => match entry.link_name()? {
                 None => bail!("Symlink entry without link name: {path:?}"),
                 Some(link) => TarItemType::Symlink(link.to_path_buf()),
-            }
+            },
             EntryType::Link => match entry.link_name()? {
                 None => bail!("Link entry without link name: {path:?}"),
                 Some(link) => TarItemType::HardLink(link.to_path_buf()),
@@ -98,7 +98,7 @@ impl TarItem {
     pub fn link_target(&self) -> Option<&PathBuf> {
         match &self.type_ {
             TarItemType::HardLink(path) | TarItemType::Symlink(path) => Some(path),
-            _ => None
+            _ => None,
         }
     }
 

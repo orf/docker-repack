@@ -102,7 +102,10 @@ impl<'a: 'b, 'b> LayerPacker<'a, 'b> {
     pub fn add_items(&mut self, items: impl Iterator<Item = &'a TarItem>) -> anyhow::Result<()> {
         for item in items.sorted() {
             if let Some(key) = item.key_for_hardlink() {
-                if let Some(bin) = self.bins.iter_mut().find(|bin| bin.contains_hardlink_target(key))
+                if let Some(bin) = self
+                    .bins
+                    .iter_mut()
+                    .find(|bin| bin.contains_hardlink_target(key))
                 {
                     bin.add_item(item)?;
                     continue;
