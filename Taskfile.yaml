@@ -1,0 +1,33 @@
+version: "3"
+
+vars:
+  IMAGES: [ 'python:3.11', 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04', 'tensorflow/tensorflow:2.17.0-gpu', 'angelborroy/llama2:1.0.0' ]
+
+tasks:
+  test:
+    cmds:
+      - cargo build --release
+      - rm -rf oci/python/3.11/image_new/
+      - ./target/release/docker-repack oci/python/3.11/ --target-size=500MB --exclude='*.pyc'
+      - skopeo copy --override-arch=arm64 --override-os=linux oci:oci/python/3.11/image_new/ docker-daemon:foo:abc
+      - docker run foo:abc python -c "print('Hello, World!')"
+
+  test-all:
+    cmds:
+      - cargo build --release
+      - for: { var: IMAGES }
+        cmd: |
+          rm -rf oci/{{.ITEM | replace ":" "/" }}/image_new/
+          ./target/release/docker-repack oci/{{.ITEM | replace ":" "/" }}/ --target-size=500MB --exclude='*.pyc'
+          echo {{.ITEM}}:
+          echo "Old":
+          du -hs oci/{{.ITEM | replace ":" "/" }}/image/blobs/sha256/
+          echo "New":
+          du -hs oci/{{.ITEM | replace ":" "/" }}/image_new/blobs/sha256/
+
+  sync:
+    cmds:
+      - for: {var: IMAGES}
+        cmd: |
+          mkdir -p oci/{{.ITEM | replace ":" "/" }}/image/
+          skopeo copy --override-arch=arm64 --override-os=linux docker://docker.io/{{.ITEM}} oci:oci/{{.ITEM | replace ":" "/" }}/image/

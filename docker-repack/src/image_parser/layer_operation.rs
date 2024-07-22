@@ -15,13 +15,6 @@ impl LayerOperations {
         })
     }
 
-    pub fn regular_file_count(&self) -> usize {
-        self.operations
-            .iter()
-            .filter(|(_, item)| item.is_regular_file)
-            .count()
-    }
-
     pub fn removed_files(&self) -> impl Iterator<Item = (&String, &TarItem)> {
         self.operations
             .iter()

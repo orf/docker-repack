@@ -1,8 +1,10 @@
-use crate::image_parser::image::LayerID;
+use crate::image_parser::image_reader::SourceLayerID;
 use crate::image_parser::layer_operation::LayerOperations;
 use crate::image_parser::TarItem;
 use std::collections::BTreeMap;
 use std::ops::Bound::{Excluded, Unbounded};
+use byte_unit::Byte;
+use globset::GlobSet;
 use trie_rs::iter::KeysExt;
 
 pub type PathMap = BTreeMap<String, TarItem>;
@@ -39,7 +41,7 @@ impl LayerContents {
         new_contents
     }
 
-    fn remove_path(&mut self, path: &String, layer_index: LayerID) {
+    fn remove_path(&mut self, path: &String, layer_index: SourceLayerID) {
         if self.present_paths.remove(path).is_none() {
             if !path.ends_with('/') {
                 // Try removing a directory, if it exists
@@ -51,7 +53,25 @@ impl LayerContents {
         }
     }
 
+    pub fn exclude_globs(&mut self, glob_set: GlobSet) -> (usize, Byte) {
+        let initial_count = self.present_paths.len();
+        let initial_size = self.present_paths.values().map(|p| p.size).sum::<u64>();
+        self.present_paths.retain(|path, item| {
+            if let Some(link_target) = item.link_target() {
+                return !glob_set.is_match(link_target);
+            }
+            !glob_set.is_match(path)
+        });
+        let new_count = self.present_paths.len();
+        let new_size = self.present_paths.values().map(|p| p.size).sum::<u64>();
+        (initial_count - new_count, Byte::from(initial_size - new_size))
+    }
+
     pub fn len(&self) -> usize {
         self.present_paths.len()
+    }
+
+    pub fn into_inner(self) -> PathMap {
+        self.present_paths
     }
 }
