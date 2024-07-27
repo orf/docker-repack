@@ -36,7 +36,7 @@ jobs:
 
       - name: benchmark
         run: hyperfine --runs 1
-              --parameter-list image $(echo "${images}" | tr '\n' ',' | tr -d " \t\n\r")
+              --parameter-list image $(echo "${images}" | tr '\n' ',' | sed 's/.$//')
               './bin/skopeo copy --quiet --image-parallel-copies=25 --all docker://docker.io/{image} oci-archive:saved-image'
               --cleanup 'rm saved-image'
         env:
