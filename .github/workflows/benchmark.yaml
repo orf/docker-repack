@@ -25,30 +25,37 @@ jobs:
 #        with:
 #          repo: containerd/nerdctl
 #          cache: true
+
       - uses: actions/setup-go@v5
         with:
           cache: 'true'
+
       - uses: actions/checkout@v4
         with:
           repository: 'containers/skopeo'
           path: 'skopeo'
+
       - run: DISABLE_DOCS=1 make bin/skopeo
         working-directory: skopeo
-#      - name: install hyperfine
-#        uses: jaxxstorm/action-install-gh-release@v1
-#        with:
-#          repo: sharkdp/hyperfine
-#          # https://github.com/jaxxstorm/action-install-gh-release/issues/88
-#          tag: v1.18.0
-#          binaries-location: hyperfine-v1.18.0-x86_64-unknown-linux-gnu
-#          cache: true
-#
-#      - name: benchmark
-#        run: sudo env "PATH=$PATH" hyperfine --runs 5
-#              --show-output
-#              --parameter-list image "${images}"
-#              'nerdctl image pull --quiet --unpack=false --all-platforms {image}'
-#              --cleanup 'nerdctl image rm {image}'
+
+      - run: ./skopeo/bin/skopeo --version
+      - run: ./skopeo/bin/skopeo copy docker://docker.io/orfal/split:zstd-python-3.11 oci-archive:test
+
+      - name: install hyperfine
+        uses: jaxxstorm/action-install-gh-release@v1
+        with:
+          repo: sharkdp/hyperfine
+          # https://github.com/jaxxstorm/action-install-gh-release/issues/88
+          tag: v1.18.0
+          binaries-location: hyperfine-v1.18.0-x86_64-unknown-linux-gnu
+          cache: true
+
+      - name: benchmark
+        run: sudo env "PATH=$PATH" hyperfine --runs 5
+              --show-output
+              --parameter-list image "${images}"
+              'nerdctl image pull --quiet --unpack=false --all-platforms {image}'
+              --cleanup 'nerdctl image rm {image}'
 #        env:
 #          images: >-
 #            docker.io/orfal/split:zstd-python-3.11,
