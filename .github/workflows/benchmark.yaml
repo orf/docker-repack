@@ -34,6 +34,15 @@ jobs:
         with:
           cache: 'true'
 
+      - name: install hyperfine
+        uses: jaxxstorm/action-install-gh-release@v1
+        with:
+          repo: sharkdp/hyperfine
+          # https://github.com/jaxxstorm/action-install-gh-release/issues/88
+          tag: v1.18.0
+          binaries-location: hyperfine-v1.18.0-x86_64-unknown-linux-gnu
+          cache: true
+
       - uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: libgpgme-dev libassuan-dev libbtrfs-dev pkg-config
@@ -44,21 +53,12 @@ jobs:
       - run: ./bin/skopeo --version
       - run: ./bin/skopeo copy docker://docker.io/orfal/split:zstd-python-3.11 oci-archive:test
 
-      - name: install hyperfine
-        uses: jaxxstorm/action-install-gh-release@v1
-        with:
-          repo: sharkdp/hyperfine
-          # https://github.com/jaxxstorm/action-install-gh-release/issues/88
-          tag: v1.18.0
-          binaries-location: hyperfine-v1.18.0-x86_64-unknown-linux-gnu
-          cache: true
-
-      - name: benchmark
-        run: sudo env "PATH=$PATH" hyperfine --runs 5
-              --show-output
-              --parameter-list image "${images}"
-              'nerdctl image pull --quiet --unpack=false --all-platforms {image}'
-              --cleanup 'nerdctl image rm {image}'
+#      - name: benchmark
+#        run: sudo env "PATH=$PATH" hyperfine --runs 5
+#              --show-output
+#              --parameter-list image "${images}"
+#              './bin/skopeo copy --quiet --image-parallel-copies=10 --all docker://{image} oci-archive:test'
+#              --cleanup 'nerdctl image rm {image}'
 #        env:
 #          images: >-
 #            docker.io/orfal/split:zstd-python-3.11,
