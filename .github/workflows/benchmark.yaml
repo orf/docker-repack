@@ -30,6 +30,11 @@ jobs:
         with:
           cache: 'true'
 
+      - uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: libgpgme-dev libassuan-dev libbtrfs-dev pkg-config
+          version: 1
+
       - uses: actions/checkout@v4
         with:
           repository: 'containers/skopeo'
