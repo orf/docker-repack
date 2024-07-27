@@ -5,6 +5,8 @@ on:
 
 jobs:
   containerd:
+    permissions:
+      actions: read
     strategy:
       fail-fast: false
       matrix:
