@@ -3,29 +3,10 @@ name: containerd
 on:
   push:
 
-env:
-  ACTIONS_STEP_DEBUG: true
-
 jobs:
   pull-image:
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        image:
-#          - orfal/split:zstd-python-3.11
-#          - orfal/split:original-python-3.11
-#          - orfal/split:repacked-python-3.11
     runs-on: ubuntu-latest
     steps:
-#      - name: Set up containerd
-#        uses: crazy-max/ghaction-setup-containerd@v3
-#
-#      - name: install nerdctl
-#        uses: jaxxstorm/action-install-gh-release@v1
-#        with:
-#          repo: containerd/nerdctl
-#          cache: true
-
       - uses: actions/checkout@v4
         with:
           repository: 'containers/skopeo'
@@ -63,11 +44,6 @@ jobs:
 #          images: >-
 #            docker.io/orfal/split:zstd-python-3.11,
 #            docker.io/orfal/split:original-python-3.11
-
-  #      - name: unpack
-#        run: nerdctl image pull --all-platforms docker.io/${{ matrix.image }} --unpack=false
-#      - name: Pull Docker image
-#        run: sudo ctr i pull --max-concurrent-downloads=50 docker.io/${{ matrix.image }} &2> /dev/null
 
   diagram:
     permissions:
