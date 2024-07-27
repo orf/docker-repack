@@ -30,7 +30,15 @@ jobs:
           packages: libgpgme-dev libassuan-dev libbtrfs-dev pkg-config
           version: 1
 
+      - name: Cache skopeo
+        id: cache-skopeo
+        uses: actions/cache@v4
+        with:
+          path: bin/skopeo
+          key: ${{ runner.os }}-skopeo
+
       - run: DISABLE_DOCS=1 make bin/skopeo
+        if: steps.cache-primes.outputs.cache-hit != 'true'
 
       - run: ./bin/skopeo --version
       - run: ./bin/skopeo copy docker://docker.io/orfal/split:zstd-python-3.11 oci-archive:test
