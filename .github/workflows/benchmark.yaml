@@ -35,7 +35,7 @@ jobs:
       - run: ./bin/skopeo --version
 
       - name: benchmark
-        run: hyperfine --runs 5
+        run: hyperfine --runs 20
               --parameter-list image $(echo "${images}" | tr '\n' ',')
               './bin/skopeo copy --quiet --image-parallel-copies=10 --all docker://{image} oci-archive:saved-image'
               --cleanup 'rm saved-image'
