@@ -6,6 +6,7 @@ on:
 jobs:
   containerd:
     strategy:
+      fail-fast: false
       matrix:
         image:
           - orfal/python:split-sorted-3.11
