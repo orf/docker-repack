@@ -36,8 +36,7 @@ jobs:
           cache: true
 
       - name: benchmark
-        run: |
-          hyperfine --runs 5
+        run: hyperfine --runs 5
               --show-output
               --parameter-list image "${images}" 
               'nerdctl image pull --all-platforms {image} --unpack=false' 
