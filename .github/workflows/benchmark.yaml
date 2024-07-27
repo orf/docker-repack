@@ -41,8 +41,12 @@ jobs:
               --cleanup 'rm saved-image'
         env:
           images: |-
-            docker.io/orfal/split:zstd-python-3.11
             docker.io/orfal/split:original-python-3.11
+            docker.io/orfal/split:repacked-python-3.11
+            docker.io/orfal/split:original-tensorflow-tensorflow-2.17.0-gpu
+            docker.io/orfal/split:repacked-tensorflow-tensorflow-2.17.0-gpu
+            docker.io/orfal/split:original-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
+            docker.io/orfal/split:repacked-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
 
   diagram:
     permissions:
