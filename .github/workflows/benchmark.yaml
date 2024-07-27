@@ -22,7 +22,7 @@ jobs:
         with:
           repo: containerd/nerdctl
       - name: download
-        run: nerdctl image pull --all-platforms docker.io/${{ matrix.image }} --unpack=false
+        run: sudo nerdctl image pull --all-platforms docker.io/${{ matrix.image }} --unpack=false
 
 #      - name: unpack
 #        run: nerdctl image pull --all-platforms docker.io/${{ matrix.image }} --unpack=false
