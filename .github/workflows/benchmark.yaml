@@ -33,7 +33,7 @@ jobs:
       - run: DISABLE_DOCS=1 make bin/skopeo
 
       - run: ./bin/skopeo --version
-      - run: ./bin/skopeo copy docker://docker.io/orfal/split:zstd-python-3.11 oci-archive:test
+      - run: ./bin/skopeo copy docker://docker.io/orfal/split:zstd-python-3.11 oci-archive:test --image-parallel-copies=10
 
 #      - name: benchmark
 #        run: sudo env "PATH=$PATH" hyperfine --runs 5
