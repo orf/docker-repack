@@ -248,7 +248,7 @@ impl<'a> ImageWriter<'a> {
                     .iter()
                     .map(|(_, hash_and_size)| {
                         Descriptor::new(
-                            MediaType::ImageLayer,
+                            MediaType::ImageLayerZstd,
                             hash_and_size.size as i64,
                             hash_and_size.prefixed_hash(),
                         )
