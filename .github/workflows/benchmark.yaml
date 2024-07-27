@@ -47,8 +47,9 @@ jobs:
             orfal/split:repacked-tensorflow-tensorflow-2.17.0-gpu
             orfal/split:original-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
             orfal/split:repacked-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
-            orfal/split:original-angelborroy-llama2-1.0.0
-            orfal/split:repacked-angelborroy-llama2-1.0.0
+
+#            orfal/split:original-angelborroy-llama2-1.0.0
+#            orfal/split:repacked-angelborroy-llama2-1.0.0
 
   diagram:
     permissions:
