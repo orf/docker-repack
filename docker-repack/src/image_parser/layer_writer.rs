@@ -1,23 +1,31 @@
 use crate::image_parser::{HashAndSize, HashedWriter};
+use byte_unit::{Byte, UnitType};
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufWriter, Read};
-use std::path::PathBuf;
+use std::ops::Range;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
-use tar::{Builder, Entry, EntryType};
+use tar::{Builder, EntryType, Header};
+
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+pub enum LayerType {
+    TinyItems,
+    Files,
+}
 
 pub struct LayerWriter {
     path: PathBuf,
     archive_writer: Mutex<Builder<BufWriter<HashedWriter<File>>>>,
     index_writer: Mutex<BufWriter<File>>,
     entries: AtomicUsize,
-    expected_entries: usize,
+    type_: LayerType
 }
 
 impl LayerWriter {
-    pub fn create_layer(path: PathBuf, expected_entries: usize) -> anyhow::Result<LayerWriter> {
+    pub fn create_layer(path: PathBuf, type_: LayerType) -> anyhow::Result<LayerWriter> {
         let writer = HashedWriter::new(File::create(&path)?);
         let writer = Builder::new(BufWriter::new(writer));
         let index_writer = BufWriter::new(File::create(path.with_extension("index.txt"))?);
@@ -26,50 +34,102 @@ impl LayerWriter {
             archive_writer: Mutex::new(writer),
             index_writer: Mutex::new(index_writer),
             entries: 0.into(),
-            expected_entries,
+            type_
         })
     }
 
-    pub fn write_entry(&self, entry: &Entry<impl Read>, data: &[u8]) -> anyhow::Result<()> {
-        let entry_type = entry.header().entry_type();
-        let link_name_binding = entry.link_name()?;
-        let link_name = link_name_binding
-            .as_ref()
-            .map(|p| p.to_str().unwrap())
-            .unwrap_or_default();
-        let mut header = entry.header().clone();
-        let path = entry.path()?;
-        let expected_size = entry.size();
-
+    #[inline(always)]
+    fn write_index(
+        &self,
+        byte_range: &Range<u64>,
+        path: &Path,
+        link_name: Option<&Path>,
+        entry_type: EntryType,
+    ) -> anyhow::Result<()> {
         let prev = self.entries.fetch_add(1, Ordering::Relaxed);
         let mut index_writer = self.index_writer.lock().unwrap();
         writeln!(
             index_writer,
-            "{prev:>10} {entry_type:>20?} - len: {:>10} expected: {:>10} path: {} link: {}",
-            data.len(),
-            expected_size,
+            "{prev:>10} {entry_type:>20?} - byte_range: {:>10?} path: {} link: {:?}",
+            byte_range,
             path.display(),
             link_name
         )?;
         drop(index_writer);
+        Ok(())
+    }
 
-        // assert_eq!(data.len(), expected_size as usize);
-
+    #[inline(always)]
+    pub fn write_new_directory(
+        &self,
+        path: &Path,
+    ) -> anyhow::Result<()> {
+        self.write_index(&(0..0), path, None, EntryType::Directory)?;
+        let mut header = Header::new_gnu();
+        header.set_entry_type(EntryType::Directory);
+        header.set_size(0);
         let mut writer = self.archive_writer.lock().unwrap();
-        match entry_type {
-            EntryType::Regular | EntryType::Directory => {
-                writer.append_data(&mut header, &path, data)?
-            }
-            EntryType::Link | EntryType::Symlink => {
-                let target_path = entry.link_name()?.unwrap();
-                writer.append_link(&mut header, &path, target_path)?;
-            }
-            _ => {
-                panic!("Unsupported entry type {entry_type:?}")
-            }
-        }
-        drop(writer);
+        writer.append_data(&mut header, path, &mut std::io::empty())?;
+        Ok(())
+    }
 
+    #[inline(always)]
+    pub fn write_new_file_with_data(
+        &self,
+        path: &Path,
+        file_mode: file_mode::Mode,
+        data: &[u8],
+    ) -> anyhow::Result<()> {
+        self.write_index(&(0..data.len() as u64), path, None, EntryType::Regular)?;
+        let mut header = Header::new_gnu();
+        header.set_entry_type(EntryType::Regular);
+        header.set_size(data.len() as u64);
+        header.set_mode(file_mode.mode());
+        let mut writer = self.archive_writer.lock().unwrap();
+        writer.append_data(&mut header, path, data)?;
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn write_file(
+        &self,
+        mut header: Header,
+        path: &Path,
+        mut data: impl Read,
+        byte_range: Range<u64>,
+    ) -> anyhow::Result<()> {
+        self.write_index(&byte_range, path, None, header.entry_type())?;
+        let mut writer = self.archive_writer.lock().unwrap();
+        writer.append_data(&mut header, path, &mut data)?;
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn write_empty_file(&self, mut header: Header, path: &Path) -> anyhow::Result<()> {
+        self.write_index(&(0..0), path, None, header.entry_type())?;
+        let mut writer = self.archive_writer.lock().unwrap();
+        writer.append_data(&mut header, path, &mut std::io::empty())?;
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn write_link(
+        &self,
+        mut header: Header,
+        path: &Path,
+        target_path: &Path,
+    ) -> anyhow::Result<()> {
+        self.write_index(&(0..0), path, Some(target_path), header.entry_type())?;
+        let mut writer = self.archive_writer.lock().unwrap();
+        writer.append_link(&mut header, path, target_path)?;
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn write_directory(&self, mut header: Header, path: &Path) -> anyhow::Result<()> {
+        self.write_index(&(0..0), path, None, header.entry_type())?;
+        let mut writer = self.archive_writer.lock().unwrap();
+        writer.append_data(&mut header, path, &mut std::io::empty())?;
         Ok(())
     }
 
@@ -79,9 +139,9 @@ impl LayerWriter {
         let inner = inner.into_inner()?;
         let (_, hash) = inner.into_inner();
         Ok(WrittenLayer {
+            type_: self.type_,
             path: self.path,
             hash,
-            expected_entries: self.expected_entries,
             entries: self.entries.load(Ordering::SeqCst),
         })
     }
@@ -89,19 +149,20 @@ impl LayerWriter {
 
 #[derive(Debug)]
 pub struct WrittenLayer {
+    pub type_: LayerType,
     pub path: PathBuf,
     pub hash: HashAndSize,
     pub entries: usize,
-    pub expected_entries: usize,
 }
 
 impl Display for WrittenLayer {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "WrittenLayer: ")?;
         write!(
             f,
-            "WrittenLayer: entries={:<5} expected={:<5} path={}",
+            "size={:#<6.1} entries={:<5} path={}",
+            Byte::from(self.hash.size).get_appropriate_unit(UnitType::Decimal),
             self.entries,
-            self.expected_entries,
             self.path.display()
         )
     }

@@ -1,10 +1,12 @@
 use crate::image_parser::image_reader::SourceLayerID;
-use crate::image_parser::{ImageWriter, TarItem, TarItemKey};
+use crate::image_parser::{ImageWriter, LayerType, TarItem, TarItemChunk, TarItemKey};
 use anyhow::bail;
 use byte_unit::{Byte, UnitType};
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
+use std::ops::Range;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct Bin<'a, 'b> {
@@ -41,7 +43,7 @@ impl<'a: 'b, 'b> Bin<'a, 'b> {
         (self.effective_size + item.size) <= self.target_size
     }
     pub fn add_item(&mut self, item: &'a TarItem) -> anyhow::Result<()> {
-        if let Some(_) = self.items.insert(item.key(), item) {
+        if self.items.insert(item.key(), item).is_some() {
             bail!("Item {:?} already present in bin", item.key());
         }
         self.total_size += item.size;
@@ -56,12 +58,20 @@ impl<'a: 'b, 'b> Bin<'a, 'b> {
         Ok(())
     }
 
-    pub fn into_iter(self) -> impl Iterator<Item = (SourceLayerID, &'a str)> {
+    pub fn into_iter(
+        self,
+    ) -> impl Iterator<Item = (SourceLayerID, &'a str, Range<u64>, Option<PathBuf>)> {
         let items = self
             .items
             .values()
-            .into_iter()
-            .map(|item| (item.layer_id, item.path.to_str().unwrap()))
+            .map(|item| {
+                (
+                    item.layer_id,
+                    item.path.to_str().unwrap(),
+                    0..item.size,
+                    None,
+                )
+            })
             .collect_vec();
         items.into_iter()
     }
@@ -84,10 +94,29 @@ impl Display for Bin<'_, '_> {
 }
 
 #[derive(Debug)]
+pub struct SplitFile<'a, 'b> {
+    key: TarItemKey<'b>,
+    item: &'a TarItem,
+    byte_range: Range<u64>,
+    to_path: PathBuf,
+}
+
+impl Display for SplitFile<'_, '_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "SplitFile: {:?} {} {:?} {:?}",
+            self.key, self.item, self.byte_range, self.to_path
+        )
+    }
+}
+
+#[derive(Debug)]
 pub struct LayerPacker<'a, 'b> {
     name: &'static str,
     target_size: u64,
     bins: Vec<Bin<'a, 'b>>,
+    split_files: Vec<SplitFile<'a, 'b>>,
 }
 
 impl<'a: 'b, 'b> LayerPacker<'a, 'b> {
@@ -96,7 +125,24 @@ impl<'a: 'b, 'b> LayerPacker<'a, 'b> {
             name,
             target_size,
             bins: Vec::new(),
+            split_files: Vec::new(),
         }
+    }
+
+    pub fn add_chunked_items(
+        &mut self,
+        chunks: impl Iterator<Item = &'a TarItemChunk<'a>>,
+    ) -> anyhow::Result<()> {
+        for chunk in chunks {
+            let split_item = SplitFile {
+                key: chunk.tar_item.key(),
+                item: chunk.tar_item,
+                byte_range: chunk.byte_range.clone(),
+                to_path: chunk.dest_path(),
+            };
+            self.split_files.push(split_item);
+        }
+        Ok(())
     }
 
     pub fn add_items(&mut self, items: impl Iterator<Item = &'a TarItem>) -> anyhow::Result<()> {
@@ -129,7 +175,21 @@ impl<'a: 'b, 'b> LayerPacker<'a, 'b> {
 
     pub fn create_layers(self, image_writer: &mut ImageWriter<'a>) -> anyhow::Result<()> {
         for bin in self.bins.into_iter() {
-            image_writer.add_layer(self.name, bin.into_iter())?;
+            image_writer.add_layer_paths(self.name, bin.into_iter(), LayerType::Files)?;
+        }
+
+        for split_file in self.split_files.into_iter() {
+            image_writer.add_layer_paths(
+                self.name,
+                [(
+                    split_file.item.layer_id,
+                    split_file.item.path.to_str().unwrap(),
+                    split_file.byte_range,
+                    Some(split_file.to_path.to_path_buf()),
+                )]
+                .into_iter(),
+                LayerType::Files
+            )?;
         }
 
         Ok(())
@@ -160,6 +220,12 @@ impl Display for LayerPacker<'_, '_> {
         writeln!(f, "- Bins:")?;
         for (idx, bin) in self.bins.iter().enumerate() {
             writeln!(f, "  - {idx:>3}: {}", bin)?;
+        }
+        if !self.split_files.is_empty() {
+            writeln!(f, "- Split files:")?;
+            for (idx, split_file) in self.split_files.iter().enumerate() {
+                writeln!(f, "  - {idx:>3}: {}", split_file)?;
+            }
         }
         Ok(())
     }

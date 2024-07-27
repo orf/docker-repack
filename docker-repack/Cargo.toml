@@ -24,3 +24,5 @@ trie-rs = "0.4.2"
 zstd = "0.13.2"
 strum_macros = "0.26.4"
 globset = { version = "0.4.14", features = ["serde"] }
+file-mode = "0.1.2"
+comfy-table = { version = "7.1.1", default-features = false }

@@ -1,0 +1,16 @@
+name: containerd
+
+on:
+  push:
+
+jobs:
+  containerd:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Set up containerd
+        uses: crazy-max/ghaction-setup-containerd@v3
+      -
+        name: Pull Docker image
+        run: |
+          sudo ctr i pull --all-platforms --all-metadata docker.io/crazymax/diun:latest

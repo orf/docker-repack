@@ -10,6 +10,7 @@ mod packing;
 mod tar_item;
 // mod compressed_hashed_writer;
 mod hashed_writer;
+mod utils;
 
 pub use hashed_writer::{HashAndSize, HashedWriter};
 pub use image_reader::ImageReader;
@@ -17,3 +18,4 @@ pub use image_writer::ImageWriter;
 pub use layer_contents::LayerContents;
 pub use packing::LayerPacker;
 pub use tar_item::*;
+pub use layer_writer::LayerType;

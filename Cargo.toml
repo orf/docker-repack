@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["docker-repack", "file-combiner"]
+members = ["docker-repack"]
 
 [profile.lto]
 inherits = "release"
