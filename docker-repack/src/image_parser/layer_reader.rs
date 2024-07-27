@@ -10,22 +10,25 @@ pub struct Layer {
     pub id: SourceLayerID,
     pub path: PathBuf,
     pub size: u64,
-    // pub digest: String,
 }
 
 pub fn progress_reader(
     progress: &MultiProgress,
     size: u64,
     file: BufReader<File>,
+    message: String,
 ) -> ProgressBarIter<BufReader<File>> {
     progress
         .add(
             ProgressBar::new(size)
                 .with_style(
-                    ProgressStyle::with_template("{wide_bar} {binary_bytes}/{binary_total_bytes}")
-                        .unwrap(),
+                    ProgressStyle::with_template(
+                        "{msg:>10} {wide_bar} {binary_bytes}/{binary_total_bytes}",
+                    )
+                    .unwrap(),
                 )
-                .with_finish(ProgressFinish::AndClear),
+                .with_finish(ProgressFinish::AndClear)
+                .with_message(message),
         )
         .wrap_read(file)
 }
@@ -39,7 +42,12 @@ impl Layer {
         let file = BufReader::new(file);
         let writer = match progress {
             None => ProgressBar::hidden().wrap_read(file),
-            Some(multi_progress) => progress_reader(multi_progress, self.size, file),
+            Some(multi_progress) => progress_reader(
+                multi_progress,
+                self.size,
+                file,
+                format!("Reading {}", self.id),
+            ),
         };
 
         let decoder = GzDecoder::new(writer);

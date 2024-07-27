@@ -188,7 +188,7 @@ impl<'a: 'b, 'b> LayerPacker<'a, 'b> {
                     Some(split_file.to_path.to_path_buf()),
                 )]
                 .into_iter(),
-                LayerType::Files
+                LayerType::Files,
             )?;
         }
 

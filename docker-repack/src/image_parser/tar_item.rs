@@ -2,6 +2,7 @@ use crate::image_parser::image_reader::SourceLayerID;
 use crate::image_parser::utils::byte_range_chunks;
 use anyhow::bail;
 use byte_unit::{Byte, UnitType};
+use const_hex::Buffer;
 use itertools::Itertools;
 use sha2::{Digest, Sha256};
 use std::cmp::Ordering;
@@ -10,7 +11,6 @@ use std::io::Read;
 use std::ops::Range;
 use std::path::PathBuf;
 use tar::{Entry, EntryType};
-use const_hex::Buffer;
 
 pub type TarItemKey<'a> = (SourceLayerID, &'a PathBuf);
 

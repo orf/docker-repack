@@ -4,7 +4,7 @@ use crate::image_parser::layer_writer::{LayerType, LayerWriter, WrittenLayer};
 use crate::image_parser::{utils, HashAndSize, HashedWriter, ImageReader};
 use anyhow::bail;
 use chrono::Utc;
-use indicatif::{MultiProgress, ProgressDrawTarget};
+use indicatif::MultiProgress;
 use itertools::Itertools;
 use oci_spec::image::{
     Descriptor, HistoryBuilder, ImageIndexBuilder, ImageManifestBuilder, MediaType,
@@ -12,24 +12,32 @@ use oci_spec::image::{
 use rayon::prelude::*;
 use serde_json::json;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
-use byte_unit::{Byte, UnitType};
 use tar::Entry;
-
-const ZSTD_OUTPUT_LEVEL: i32 = 19;
+use zstd::zstd_safe::CompressionLevel;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct NewLayerID(usize);
+
+impl Display for NewLayerID {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "New layer {:<2}", self.0)
+    }
+}
+
+pub type PathKey<'a> = (SourceLayerID, &'a str, Range<u64>);
+pub type PathValue = (NewLayerID, Option<PathBuf>);
 
 pub struct ImageWriter<'a> {
     directory: PathBuf,
     blobs_dir: PathBuf,
     temp_dir: PathBuf,
     layers: Vec<LayerWriter>,
-    paths: HashMap<(SourceLayerID, &'a str, Range<u64>), (NewLayerID, Option<PathBuf>)>,
+    paths: HashMap<PathKey<'a>, PathValue>,
 }
 
 impl<'a> ImageWriter<'a> {
@@ -58,7 +66,7 @@ impl<'a> ImageWriter<'a> {
     ) -> anyhow::Result<(NewLayerID, &LayerWriter)> {
         let layer_id = NewLayerID(self.layers.len());
         let path = self.temp_dir.join(format!("{name}-{}.tar", layer_id.0));
-        let layer = LayerWriter::create_layer(path, type_)?;
+        let layer = LayerWriter::create_layer(layer_id, path, type_)?;
         self.layers.push(layer);
         Ok((layer_id, &self.layers[layer_id.0]))
     }
@@ -66,7 +74,7 @@ impl<'a> ImageWriter<'a> {
     pub fn add_layer_paths(
         &mut self,
         name: &'static str,
-        paths: impl Iterator<Item=(SourceLayerID, &'a str, Range<u64>, Option<PathBuf>)>,
+        paths: impl Iterator<Item = (SourceLayerID, &'a str, Range<u64>, Option<PathBuf>)>,
         type_: LayerType,
     ) -> anyhow::Result<()> {
         let (layer_id, _) = self.create_new_layer(name, type_)?;
@@ -182,34 +190,31 @@ impl<'a> ImageWriter<'a> {
     }
 
     pub fn finish_writing_layers(&mut self) -> anyhow::Result<Vec<WrittenLayer>> {
-        let finished_layers: Result<Vec<_>, _> = self
-            .layers
-            .drain(0..)
-            .into_iter()
-            .map(|layer| layer.finish())
-            .collect();
+        let finished_layers: Result<Vec<_>, _> =
+            self.layers.drain(0..).map(|layer| layer.finish()).collect();
 
-        Ok(finished_layers?)
+        finished_layers
     }
 
     pub fn compress_layers(
         &self,
         progress: &MultiProgress,
         finished_layers: Vec<WrittenLayer>,
+        compression_level: CompressionLevel,
     ) -> anyhow::Result<Vec<(WrittenLayer, HashAndSize)>> {
         let compressed_layers: Result<Vec<_>, _> = finished_layers
             .into_par_iter()
             .map(|layer| {
-                compress_layer(&progress, self.blobs_dir.clone(), &layer, ZSTD_OUTPUT_LEVEL)
+                compress_layer(progress, self.blobs_dir.clone(), &layer, compression_level)
                     .map(|v| (layer, v))
             })
             .collect();
-        Ok(compressed_layers?)
+        compressed_layers
     }
 
     pub fn write_index(
         self,
-        finished_layers: &Vec<(WrittenLayer, HashAndSize)>,
+        finished_layers: &[(WrittenLayer, HashAndSize)],
         mut image: ImageReader,
     ) -> anyhow::Result<()> {
         let root_fs = image.config.rootfs_mut();
@@ -292,7 +297,12 @@ fn compress_layer(
     encoder.set_pledged_src_size(Some(input_size))?;
 
     let buf_reader = BufReader::new(input_file);
-    let mut progress_reader = progress_reader(progress, input_size, buf_reader);
+    let mut progress_reader = progress_reader(
+        progress,
+        input_size,
+        buf_reader,
+        format!("Compressing {}", layer.id),
+    );
 
     std::io::copy(&mut progress_reader, &mut encoder)?;
 

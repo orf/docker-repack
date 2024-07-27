@@ -1,7 +1,7 @@
 use crate::image_parser::{TarItem, TarItemChunk};
 use std::fmt::Write;
 
-const SCRIPT: &'static str = include_str!("./combine_files.sh");
+const SCRIPT: &str = include_str!("./combine_files.sh");
 
 pub fn generate_combining_script(
     chunked_files: &Vec<(&TarItem, Vec<TarItemChunk>)>,

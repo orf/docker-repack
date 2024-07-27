@@ -1,17 +1,25 @@
-use crate::image_parser::{ImageReader, ImageWriter, LayerContents, LayerPacker, LayerType, TarItem};
+use crate::image_parser::{
+    ImageReader, ImageWriter, LayerContents, LayerPacker, LayerType, TarItem,
+};
 use anyhow::Context;
 use byte_unit::{Byte, UnitType};
 use clap::{Parser, Subcommand};
+use clap_num::number_range;
+use comfy_table::Table;
 use file_mode::User;
-use indicatif::{MultiProgress, ProgressDrawTarget};
+use globset::GlobSet;
+use indicatif::MultiProgress;
 use itertools::{Either, Itertools};
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
-use globset::GlobSet;
-use comfy_table::Table;
-
+use zstd::zstd_safe::CompressionLevel;
 mod file_combiner;
 mod image_parser;
+
+fn parse_compression_level(s: &str) -> Result<CompressionLevel, String> {
+    let range = zstd::compression_level_range();
+    number_range(s, *range.start(), *range.end())
+}
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -30,10 +38,12 @@ enum Command {
         target_size: Byte,
         #[arg(short, long)]
         split_file_threshold: Option<Byte>,
+        #[arg(short, long, value_parser=parse_compression_level, default_value="7")]
+        compression: CompressionLevel,
     },
     LargestFiles {
         #[arg(short, long, default_value = "10")]
-        limit: usize
+        limit: usize,
     },
 }
 
@@ -47,28 +57,61 @@ fn main() -> anyhow::Result<()> {
 
     let progress = MultiProgress::new();
     match args.command {
-        Command::Repack { target_size, split_file_threshold } => repack(progress, image, new_image_dir, target_size, split_file_threshold, exclude),
-        Command::LargestFiles { limit } => largest_files(progress, image, exclude, limit)
+        Command::Repack {
+            target_size,
+            split_file_threshold,
+            compression,
+        } => repack(
+            progress,
+            image,
+            new_image_dir,
+            target_size,
+            split_file_threshold,
+            exclude,
+            compression,
+        ),
+        Command::LargestFiles { limit } => largest_files(progress, image, exclude, limit),
     }
 }
 
-fn largest_files(progress: MultiProgress, image: ImageReader, exclude: Option<GlobSet>, limit: usize) -> anyhow::Result<()> {
+fn largest_files(
+    progress: MultiProgress,
+    image: ImageReader,
+    exclude: Option<GlobSet>,
+    limit: usize,
+) -> anyhow::Result<()> {
     let layer_contents = get_layer_contents(&progress, &image, exclude)?;
     let sorted_by_size = layer_contents
         .into_inner()
         .into_values()
         .sorted_by_key(|item| item.size)
-        .rev().take(limit);
+        .rev()
+        .take(limit);
     let mut table = Table::new();
-    table.set_header(["Path", "Size"]).add_rows(
-        sorted_by_size
-            .map(|item| [format!("{}", item.path.display()), format!("{:#.1}", Byte::from(item.size).get_appropriate_unit(UnitType::Decimal))])
-    );
+    table
+        .set_header(["Path", "Size"])
+        .add_rows(sorted_by_size.map(|item| {
+            [
+                format!("{}", item.path.display()),
+                format!(
+                    "{:#.1}",
+                    Byte::from(item.size).get_appropriate_unit(UnitType::Decimal)
+                ),
+            ]
+        }));
     println!("{table}");
     Ok(())
 }
 
-fn repack(progress: MultiProgress, image: ImageReader, output_dir: PathBuf, target_size: Byte, split_file_threshold: Option<Byte>, exclude: Option<GlobSet>) -> anyhow::Result<()> {
+fn repack(
+    progress: MultiProgress,
+    image: ImageReader,
+    output_dir: PathBuf,
+    target_size: Byte,
+    split_file_threshold: Option<Byte>,
+    exclude: Option<GlobSet>,
+    compression_level: CompressionLevel,
+) -> anyhow::Result<()> {
     let mut image_writer = ImageWriter::new(output_dir)?;
 
     let layer_contents = get_layer_contents(&progress, &image, exclude)?;
@@ -130,7 +173,7 @@ fn repack(progress: MultiProgress, image: ImageReader, output_dir: PathBuf, targ
         vec![]
     };
 
-    packer.add_chunked_items(chunked_files.iter().map(|i| i.1.iter()).flatten())?;
+    packer.add_chunked_items(chunked_files.iter().flat_map(|i| i.1.iter()))?;
 
     println!("{packer}");
     packer.create_layers(&mut image_writer)?;
@@ -140,7 +183,7 @@ fn repack(progress: MultiProgress, image: ImageReader, output_dir: PathBuf, targ
         let script = file_combiner::generate_combining_script(&chunked_files)?;
         let index = file_combiner::generate_combining_index(&chunked_files)?;
         let repack_dir = Path::new(".docker-repack/");
-        layer.write_new_directory(&repack_dir)?;
+        layer.write_new_directory(repack_dir)?;
         layer.write_new_file_with_data(
             &repack_dir.join("combine-files.sh"),
             file_mode::Mode::empty()
@@ -155,7 +198,7 @@ fn repack(progress: MultiProgress, image: ImageReader, output_dir: PathBuf, targ
         )?;
     }
 
-    image.layers().into_par_iter().try_for_each(|layer| {
+    for layer in image.layers().iter() {
         let mut archive = layer.get_progress_reader(Some(&progress))?;
         for entry in archive.entries()? {
             let mut entry = entry?;
@@ -165,16 +208,31 @@ fn repack(progress: MultiProgress, image: ImageReader, output_dir: PathBuf, targ
                 split_file_threshold.map(|f| f.as_u64()),
             )?;
         }
-        Ok::<_, anyhow::Error>(())
-    })?;
+    }
+    // image.layers().into_par_iter().try_for_each(|layer| {
+    //     let mut archive = layer.get_progress_reader(Some(&progress))?;
+    //     for entry in archive.entries()? {
+    //         let mut entry = entry?;
+    //         image_writer.add_entry(
+    //             layer.id,
+    //             &mut entry,
+    //             split_file_threshold.map(|f| f.as_u64()),
+    //         )?;
+    //     }
+    //     Ok::<_, anyhow::Error>(())
+    // })?;
 
     let finished_layers = image_writer.finish_writing_layers()?;
-    let compressed_layers = image_writer.compress_layers(&progress, finished_layers)?;
-    let sorted_layers = compressed_layers.into_iter().sorted_by_key(|(layer, size)| (layer.type_, size.size)).collect_vec();
+    let compressed_layers =
+        image_writer.compress_layers(&progress, finished_layers, compression_level)?;
+    let sorted_layers = compressed_layers
+        .into_iter()
+        .sorted_by_key(|(layer, size)| (layer.type_, size.size))
+        .collect_vec();
     image_writer.write_index(&sorted_layers, image)?;
     for (layer, hash_and_size) in sorted_layers {
         println!(
-            "{layer} - compressed: {} / Size: {}",
+            "{layer} - compressed: {} / Size: {:#.1}",
             hash_and_size.raw_hash(),
             Byte::from(hash_and_size.size).get_appropriate_unit(UnitType::Decimal)
         );
@@ -183,12 +241,16 @@ fn repack(progress: MultiProgress, image: ImageReader, output_dir: PathBuf, targ
     Ok(())
 }
 
-fn get_layer_contents(progress: &MultiProgress, image: &ImageReader, exclude: Option<GlobSet>) -> anyhow::Result<LayerContents> {
+fn get_layer_contents(
+    progress: &MultiProgress,
+    image: &ImageReader,
+    exclude: Option<GlobSet>,
+) -> anyhow::Result<LayerContents> {
     let all_operations: Result<Vec<_>, anyhow::Error> = image
         .layers()
         .into_par_iter()
         .map(|layer| {
-            let mut archive = layer.get_progress_reader(Some(&progress))?;
+            let mut archive = layer.get_progress_reader(Some(progress))?;
             let items = archive
                 .entries()
                 .unwrap()

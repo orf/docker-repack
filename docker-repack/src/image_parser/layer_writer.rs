@@ -1,3 +1,4 @@
+use crate::image_parser::image_writer::NewLayerID;
 use crate::image_parser::{HashAndSize, HashedWriter};
 use byte_unit::{Byte, UnitType};
 use std::fmt::{Display, Formatter};
@@ -17,24 +18,30 @@ pub enum LayerType {
 }
 
 pub struct LayerWriter {
+    id: NewLayerID,
     path: PathBuf,
     archive_writer: Mutex<Builder<BufWriter<HashedWriter<File>>>>,
     index_writer: Mutex<BufWriter<File>>,
     entries: AtomicUsize,
-    type_: LayerType
+    type_: LayerType,
 }
 
 impl LayerWriter {
-    pub fn create_layer(path: PathBuf, type_: LayerType) -> anyhow::Result<LayerWriter> {
+    pub fn create_layer(
+        id: NewLayerID,
+        path: PathBuf,
+        type_: LayerType,
+    ) -> anyhow::Result<LayerWriter> {
         let writer = HashedWriter::new(File::create(&path)?);
         let writer = Builder::new(BufWriter::new(writer));
         let index_writer = BufWriter::new(File::create(path.with_extension("index.txt"))?);
         Ok(LayerWriter {
+            id,
             path,
             archive_writer: Mutex::new(writer),
             index_writer: Mutex::new(index_writer),
             entries: 0.into(),
-            type_
+            type_,
         })
     }
 
@@ -60,10 +67,7 @@ impl LayerWriter {
     }
 
     #[inline(always)]
-    pub fn write_new_directory(
-        &self,
-        path: &Path,
-    ) -> anyhow::Result<()> {
+    pub fn write_new_directory(&self, path: &Path) -> anyhow::Result<()> {
         self.write_index(&(0..0), path, None, EntryType::Directory)?;
         let mut header = Header::new_gnu();
         header.set_entry_type(EntryType::Directory);
@@ -139,6 +143,7 @@ impl LayerWriter {
         let inner = inner.into_inner()?;
         let (_, hash) = inner.into_inner();
         Ok(WrittenLayer {
+            id: self.id,
             type_: self.type_,
             path: self.path,
             hash,
@@ -149,6 +154,7 @@ impl LayerWriter {
 
 #[derive(Debug)]
 pub struct WrittenLayer {
+    pub id: NewLayerID,
     pub type_: LayerType,
     pub path: PathBuf,
     pub hash: HashAndSize,

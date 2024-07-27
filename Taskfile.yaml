@@ -13,17 +13,25 @@ tasks:
       - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
       - ./target/release/docker-repack oci/{{.image | replace ":" "/" }}/ --target-size=500MB --exclude='*.pyc' --split-file-threshold=25MB
       - skopeo copy --override-arch=arm64 --override-os=linux oci:oci/{{.image | replace ":" "/" }}/image_new/ docker-daemon:foo:abc
-#      - docker run -it --entrypoint=bash foo:abc
+  #      - docker run -it --entrypoint=bash foo:abc
 
-  run-and-load:
+  run-and-export:
     vars:
-        image: 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
-#        image: 'python:3.11'
+      #        image: 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
+      image: 'python:3.11'
+      compression_level: 9
+      image_path: 'oci/{{.image | replace ":" "/" }}'
+      image_slug: '{{.image | replace ":" "-" | replace "/" "-" }}'
+      tmp_dir:
+        sh: mktemp -d
     cmds:
       - cargo build --profile=release
       - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
-      - ./target/release/docker-repack oci/{{.image | replace ":" "/" }}/ repack {{.CLI_ARGS}}
-      - skopeo copy --override-arch=arm64 --override-os=linux oci:oci/{{.image | replace ":" "/" }}/image_new/ docker-daemon:foo:abc
+      - ./target/release/docker-repack oci/{{.image | replace ":" "/" }}/ repack --compression={{.compression_level}} {{.CLI_ARGS}}
+      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:repacked-{{.image_slug}}
+      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ docker://orfal/split:original-{{.image_slug}}
+      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ dir://{{.tmp_dir}} --dest-compress --dest-compress-format=zstd --dest-compress-level={{.compression_level}}
+      - skopeo copy --override-arch=arm64 --override-os=linux dir://{{.tmp_dir}}  docker://orfal/split:zstd-{{.image_slug}}
 
   test-all:
     cmds:
@@ -42,7 +50,7 @@ tasks:
 
   sync:
     cmds:
-      - for: {var: IMAGES}
+      - for: { var: IMAGES }
         cmd: |
           mkdir -p oci/{{.ITEM | replace ":" "/" }}/image/
           skopeo copy --override-arch=arm64 --override-os=linux docker://docker.io/{{.ITEM}} oci:oci/{{.ITEM | replace ":" "/" }}/image/

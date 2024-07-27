@@ -1,10 +1,17 @@
 use crate::image_parser::layer_reader::Layer;
 use oci_spec::image::{ImageConfiguration, ImageIndex, ImageManifest};
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct SourceLayerID(pub usize);
+
+impl Display for SourceLayerID {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Layer {:<2}", self.0)
+    }
+}
 
 pub struct ImageReader {
     layers: Vec<Layer>,

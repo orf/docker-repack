@@ -26,3 +26,4 @@ strum_macros = "0.26.4"
 globset = { version = "0.4.14", features = ["serde"] }
 file-mode = "0.1.2"
 comfy-table = { version = "7.1.1", default-features = false }
+clap-num = "1.1.1"
