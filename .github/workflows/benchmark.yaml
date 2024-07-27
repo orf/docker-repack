@@ -18,7 +18,7 @@ jobs:
       - name: Set up containerd
         uses: crazy-max/ghaction-setup-containerd@v3
       - name: install nerdctl
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        uses: jaxxstorm/action-install-gh-release@v1
         with:
           repo: containerd/nerdctl
       - name: download
