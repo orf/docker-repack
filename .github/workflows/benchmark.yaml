@@ -37,16 +37,18 @@ jobs:
       - name: benchmark
         run: hyperfine --runs 1
               --parameter-list image $(echo "${images}" | tr '\n' ',' | tr -d " \t\n\r")
-              './bin/skopeo copy --quiet --image-parallel-copies=10 --all docker://{image} oci-archive:saved-image'
+              './bin/skopeo copy --quiet --image-parallel-copies=25 --all docker://docker.io/{image} oci-archive:saved-image'
               --cleanup 'rm saved-image'
         env:
           images: |-
-            docker.io/orfal/split:original-python-3.11
-            docker.io/orfal/split:repacked-python-3.11
-            docker.io/orfal/split:original-tensorflow-tensorflow-2.17.0-gpu
-            docker.io/orfal/split:repacked-tensorflow-tensorflow-2.17.0-gpu
-            docker.io/orfal/split:original-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
-            docker.io/orfal/split:repacked-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
+            orfal/split:original-python-3.11
+            orfal/split:repacked-python-3.11
+            orfal/split:original-tensorflow-tensorflow-2.17.0-gpu
+            orfal/split:repacked-tensorflow-tensorflow-2.17.0-gpu
+            orfal/split:original-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
+            orfal/split:repacked-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
+            orfal/split:original-angelborroy-llama2-1.0.0
+            orfal/split:repacked-angelborroy-llama2-1.0.0
 
   diagram:
     permissions:

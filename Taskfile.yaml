@@ -16,7 +16,7 @@ tasks:
 
   run-and-export:
     requires:
-      vars: [ 'image' ]
+      vars: [ image, prefix]
     vars:
       compression_level: 9
       image_path: 'oci/{{.image | replace ":" "/" }}'
@@ -28,12 +28,15 @@ tasks:
       - cargo build --profile=release
       - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
       - ./target/release/docker-repack oci/{{.image | replace ":" "/" }}/ repack --compression={{.compression_level}} {{.CLI_ARGS}}
-      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:repacked-{{.image_slug}}
+      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:{{.prefix}}-{{.image_slug}}
       - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ docker://orfal/split:original-{{.image_slug}}
 #      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ dir://{{.tmp_dir}} --dest-compress --dest-compress-format=zstd --dest-compress-level={{.compression_level}}
 #      - skopeo copy --override-arch=arm64 --override-os=linux dir://{{.tmp_dir}}  docker://orfal/split:zstd-{{.image_slug}}
 
   test-all:
+    requires:
+      vars:
+        - prefix
     cmds:
       - for: { var: IMAGES }
         task: run-and-export
