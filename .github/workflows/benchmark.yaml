@@ -19,7 +19,11 @@ jobs:
     steps:
 #      - name: Set up containerd
 #        uses: crazy-max/ghaction-setup-containerd@v3
-      - run: nerdctl image pull  docker.io/${{ matrix.image }}
+      - name: download
+        run: nerdctl image pull --all-platforms docker.io/${{ matrix.image }} --unpack=false
+
+#      - name: unpack
+#        run: nerdctl image pull --all-platforms docker.io/${{ matrix.image }} --unpack=false
 #      - name: Pull Docker image
 #        run: sudo ctr i pull --max-concurrent-downloads=50 docker.io/${{ matrix.image }} &2> /dev/null
 
