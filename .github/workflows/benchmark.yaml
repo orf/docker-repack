@@ -31,7 +31,6 @@ jobs:
           repo: sharkdp/hyperfine
         continue-on-error: true
       - run: ls /opt/hostedtoolcache/containerd/nerdctl/latest/linux-x64
-      - run: ls /opt/hostedtoolcache/containerd/nerdctl/latest/linux-x64/*/
       - run: ls /opt/hostedtoolcache/sharkdp/hyperfine/latest/linux-x64
       - run: ls /opt/hostedtoolcache/sharkdp/hyperfine/latest/linux-x64/*/
       - run: exit 1
