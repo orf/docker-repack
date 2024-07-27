@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  pull:
+  pull-image:
 #    strategy:
 #      fail-fast: false
 #      matrix:
@@ -43,7 +43,7 @@ jobs:
     permissions:
       actions: read
     runs-on: ubuntu-latest
-    needs: [ containerd ]
+    needs: [ pull-image ]
     steps:
       - uses: Kesin11/actions-timeline@v2
         with:
