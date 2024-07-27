@@ -24,6 +24,9 @@ jobs:
         with:
           repo: sharkdp/hyperfine
           cache: enable
+        continue-on-error: true
+      - run: ls /opt/hostedtoolcache/sharkdp/hyperfine/latest/linux-x64
+      - run: exit 1
       - name: install nerdctl
         uses: jaxxstorm/action-install-gh-release@v1
         with:
