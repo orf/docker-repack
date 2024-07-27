@@ -270,7 +270,7 @@ impl<'a> ImageWriter<'a> {
 
         std::fs::write(
             self.directory.join("index.json"),
-            serde_json::to_string(&manifest)?,
+            serde_json::to_string_pretty(&manifest)?,
         )?;
         Ok(())
     }

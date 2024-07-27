@@ -18,4 +18,4 @@ jobs:
       - name: Set up containerd
         uses: crazy-max/ghaction-setup-containerd@v3
       - name: Pull Docker image
-        run: sudo ctr i pull --all-platforms --all-metadata --local docker.io/${{ matrix.image }}
+        run: sudo ctr i pull --local docker.io/${{ matrix.image }}
