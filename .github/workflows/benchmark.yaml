@@ -5,12 +5,16 @@ on:
 
 jobs:
   containerd:
+    strategy:
+      matrix:
+        image:
+          - orfal/python:split-sorted-3.11
+          - orfal/python:3.11
+          - orfal/cuda:split-sorted-12.5.1-cudnn-devel-ubuntu20.04
+          - orfal/cuda:12.5.1-cudnn-devel-ubuntu20.04
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Set up containerd
+      - name: Set up containerd
         uses: crazy-max/ghaction-setup-containerd@v3
-      -
-        name: Pull Docker image
-        run: |
-          sudo ctr i pull --all-platforms --all-metadata docker.io/crazymax/diun:latest
+      - name: Pull Docker image
+        run: sudo ctr i pull --all-platforms --all-metadata ${{ matrix.image }}
