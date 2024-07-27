@@ -17,4 +17,4 @@ jobs:
       - name: Set up containerd
         uses: crazy-max/ghaction-setup-containerd@v3
       - name: Pull Docker image
-        run: sudo ctr i pull --debug --max-concurrent-downloads=50 --local docker.io/${{ matrix.image }}
+        run: sudo ctr i pull --debug --max-concurrent-downloads=50 --local docker.io/${{ matrix.image }} &2> /dev/null
