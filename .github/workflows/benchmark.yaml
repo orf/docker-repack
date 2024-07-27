@@ -41,8 +41,7 @@ jobs:
               --cleanup 'rm saved-image'
         env:
           images: >-
-            docker.io/orfal/split:zstd-python-3.11,
-            docker.io/orfal/split:original-python-3.11,
+            docker.io/orfal/split:zstd-python-3.11,docker.io/orfal/split:original-python-3.11
 
   diagram:
     permissions:
