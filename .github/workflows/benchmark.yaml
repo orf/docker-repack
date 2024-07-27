@@ -34,6 +34,7 @@ jobs:
 
       - name: benchmark
         run: sudo env "PATH=$PATH" hyperfine --runs 5
+              --show-output
               --parameter-list image ${images} 
               'nerdctl image pull --all-platforms {image} --unpack=false' 
               --cleanup 'nerdctl image rm docker.io/{image}'
