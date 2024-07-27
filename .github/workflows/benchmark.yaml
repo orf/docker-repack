@@ -5,6 +5,7 @@ on:
 
 jobs:
   containerd:
+
     strategy:
       fail-fast: false
       matrix:
@@ -13,12 +14,14 @@ jobs:
           - orfal/split:original-python-3.11
           - orfal/split:repacked-python-3.11
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/containerd/nerdctl:main
     steps:
-      - name: Set up containerd
-        uses: crazy-max/ghaction-setup-containerd@v3
-
-      - name: Pull Docker image
-        run: sudo ctr i pull --max-concurrent-downloads=50 docker.io/${{ matrix.image }} &2> /dev/null
+#      - name: Set up containerd
+#        uses: crazy-max/ghaction-setup-containerd@v3
+      - run: nerdctl --version
+#      - name: Pull Docker image
+#        run: sudo ctr i pull --max-concurrent-downloads=50 docker.io/${{ matrix.image }} &2> /dev/null
 
   diagram:
     permissions:

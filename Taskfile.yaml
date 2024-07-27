@@ -30,8 +30,8 @@ tasks:
       - ./target/release/docker-repack oci/{{.image | replace ":" "/" }}/ repack --compression={{.compression_level}} {{.CLI_ARGS}}
       - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:repacked-{{.image_slug}}
       - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ docker://orfal/split:original-{{.image_slug}}
-      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ dir://{{.tmp_dir}} --dest-compress --dest-compress-format=zstd --dest-compress-level={{.compression_level}}
-      - skopeo copy --override-arch=arm64 --override-os=linux dir://{{.tmp_dir}}  docker://orfal/split:zstd-{{.image_slug}}
+#      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ dir://{{.tmp_dir}} --dest-compress --dest-compress-format=zstd --dest-compress-level={{.compression_level}}
+#      - skopeo copy --override-arch=arm64 --override-os=linux dir://{{.tmp_dir}}  docker://orfal/split:zstd-{{.image_slug}}
 
   test-all:
     cmds:
