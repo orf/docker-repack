@@ -39,7 +39,7 @@ jobs:
         run: sudo env "PATH=$PATH" hyperfine --runs 5
               --show-output
               --parameter-list image "${images}" 
-              'nerdctl image pull --all-platforms {image} --unpack=false' 
+              'nerdctl image pull --quiet --unpack=false --all-platforms {image}' 
               --cleanup 'nerdctl image rm {image}'
         env:
           images: >-
