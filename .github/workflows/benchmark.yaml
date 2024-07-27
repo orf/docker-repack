@@ -36,7 +36,7 @@ jobs:
               'nerdctl image pull --all-platforms {image} --unpack=false' 
               --cleanup 'nerdctl image rm docker.io/{image}'
         env:
-          images: |
+          images: >-
             ${{ join([
               'docker.io/orfal/split:zstd-python-3.11',
               'docker.io/orfal/split:original-python-3.11',
