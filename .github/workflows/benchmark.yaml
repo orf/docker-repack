@@ -36,12 +36,13 @@ jobs:
 
       - name: benchmark
         run: hyperfine --runs 5
-              --parameter-list image "${images}"
+              --parameter-list image $(echo "${images}" | tr '\n' ',')
               './bin/skopeo copy --quiet --image-parallel-copies=10 --all docker://{image} oci-archive:saved-image'
               --cleanup 'rm saved-image'
         env:
-          images: >-
-            docker.io/orfal/split:zstd-python-3.11,docker.io/orfal/split:original-python-3.11
+          images: |-
+            docker.io/orfal/split:zstd-python-3.11
+            docker.io/orfal/split:original-python-3.11
 
   diagram:
     permissions:
