@@ -26,6 +26,10 @@ jobs:
 #          repo: containerd/nerdctl
 #          cache: true
 
+      - uses: actions/checkout@v4
+        with:
+          repository: 'containers/skopeo'
+
       - uses: actions/setup-go@v5
         with:
           cache: 'true'
@@ -35,16 +39,10 @@ jobs:
           packages: libgpgme-dev libassuan-dev libbtrfs-dev pkg-config
           version: 1
 
-      - uses: actions/checkout@v4
-        with:
-          repository: 'containers/skopeo'
-          path: 'skopeo'
-
       - run: DISABLE_DOCS=1 make bin/skopeo
-        working-directory: skopeo
 
-      - run: ./skopeo/bin/skopeo --version
-      - run: ./skopeo/bin/skopeo copy docker://docker.io/orfal/split:zstd-python-3.11 oci-archive:test
+      - run: ./bin/skopeo --version
+      - run: ./bin/skopeo copy docker://docker.io/orfal/split:zstd-python-3.11 oci-archive:test
 
       - name: install hyperfine
         uses: jaxxstorm/action-install-gh-release@v1
