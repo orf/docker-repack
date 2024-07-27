@@ -38,7 +38,7 @@ enum Command {
         target_size: Byte,
         #[arg(short, long)]
         split_file_threshold: Option<Byte>,
-        #[arg(short, long, value_parser=parse_compression_level, default_value="7")]
+        #[arg(short, long, value_parser = parse_compression_level, default_value = "7")]
         compression: CompressionLevel,
     },
     LargestFiles {
@@ -230,6 +230,7 @@ fn repack(
         .sorted_by_key(|(layer, size)| (layer.type_, size.size))
         .collect_vec();
     image_writer.write_index(&sorted_layers, image)?;
+    let total_size = sorted_layers.iter().map(|(_, size)| size.size).sum::<u64>();
     for (layer, hash_and_size) in sorted_layers {
         println!(
             "{layer} - compressed: {} / Size: {:#.1}",
@@ -237,6 +238,10 @@ fn repack(
             Byte::from(hash_and_size.size).get_appropriate_unit(UnitType::Decimal)
         );
     }
+    println!(
+        "Total image size: {:#.1}",
+        Byte::from(total_size).get_appropriate_unit(UnitType::Decimal)
+    );
 
     Ok(())
 }

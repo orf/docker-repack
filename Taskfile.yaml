@@ -13,17 +13,17 @@ tasks:
       - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
       - ./target/release/docker-repack oci/{{.image | replace ":" "/" }}/ --target-size=500MB --exclude='*.pyc' --split-file-threshold=25MB
       - skopeo copy --override-arch=arm64 --override-os=linux oci:oci/{{.image | replace ":" "/" }}/image_new/ docker-daemon:foo:abc
-  #      - docker run -it --entrypoint=bash foo:abc
 
   run-and-export:
+    requires:
+      vars: [ 'image' ]
     vars:
-      #        image: 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
-      image: 'python:3.11'
       compression_level: 9
       image_path: 'oci/{{.image | replace ":" "/" }}'
       image_slug: '{{.image | replace ":" "-" | replace "/" "-" }}'
       tmp_dir:
         sh: mktemp -d
+    interactive: true
     cmds:
       - cargo build --profile=release
       - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
@@ -35,22 +35,7 @@ tasks:
 
   test-all:
     cmds:
-      - cargo build --release
       - for: { var: IMAGES }
-        cmd: |
-          rm -rf oci/{{.ITEM | replace ":" "/" }}/image_new/
-          ./target/release/docker-repack oci/{{.ITEM | replace ":" "/" }}/ --target-size=500MB --exclude='*.pyc'
-          echo {{.ITEM}}:
-          echo "Old":
-          du -hs oci/{{.ITEM | replace ":" "/" }}/image/blobs/sha256/
-          echo "New":
-          du -hs oci/{{.ITEM | replace ":" "/" }}/image_new/blobs/sha256/
-          
-          skopeo copy --override-arch=arm64 --override-os=linux oci:oci/{{.ITEM | replace ":" "/" }}/image_new/ docker-daemon:foo/{{.ITEM}}
-
-  sync:
-    cmds:
-      - for: { var: IMAGES }
-        cmd: |
-          mkdir -p oci/{{.ITEM | replace ":" "/" }}/image/
-          skopeo copy --override-arch=arm64 --override-os=linux docker://docker.io/{{.ITEM}} oci:oci/{{.ITEM | replace ":" "/" }}/image/
+        task: run-and-export
+        vars:
+          image: '{{.ITEM}}'

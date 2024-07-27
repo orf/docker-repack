@@ -9,10 +9,9 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - orfal/python:split-sorted-3.11
-          - orfal/python:3.11
-          - orfal/cuda:split-sorted-12.5.1-cudnn-devel-ubuntu20.04
-          - orfal/cuda:12.5.1-cudnn-devel-ubuntu20.04
+          - orfal/split:zstd-python-3.11
+          - orfal/split:original-python-3.11
+          - orfal/split:repacked-python-3.11
     runs-on: ubuntu-latest
     steps:
       - name: Set up containerd
