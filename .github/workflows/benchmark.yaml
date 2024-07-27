@@ -29,11 +29,8 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@v1
         with:
           repo: sharkdp/hyperfine
-        continue-on-error: true
-      - run: ls /opt/hostedtoolcache/containerd/nerdctl/latest/linux-x64
-      - run: ls /opt/hostedtoolcache/sharkdp/hyperfine/latest/linux-x64
-      - run: ls /opt/hostedtoolcache/sharkdp/hyperfine/latest/linux-x64/*/
-      - run: exit 1
+          tag: v1.18.0
+          binaries-location: hyperfine-v1.18.0-x86_64-unknown-linux-gnu
 
       - name: benchmark
         run: sudo env "PATH=$PATH" hyperfine --runs 5
