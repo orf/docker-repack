@@ -3,6 +3,9 @@ name: containerd
 on:
   push:
 
+env:
+  ACTIONS_STEP_DEBUG: true
+
 jobs:
   pull-image:
 #    strategy:
@@ -29,11 +32,11 @@ jobs:
 
       - name: benchmark
         run: sudo env "PATH=$PATH" hyperfine --runs 5
-              --parameter-list image ${{ images }} 
+              --parameter-list image ${images} 
               'nerdctl image pull --all-platforms {image} --unpack=false' 
               --cleanup 'nerdctl image rm docker.io/{image}'
         with:
-          images: |
+          env: |
             ${{ join([
               'docker.io/orfal/split:zstd-python-3.11',
               'docker.io/orfal/split:original-python-3.11',
