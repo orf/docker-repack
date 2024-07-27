@@ -34,11 +34,9 @@ jobs:
           binaries-location: hyperfine-v1.18.0-x86_64-unknown-linux-gnu
 
       - name: benchmark
-        run: hyperfine --runs 5
-              --show-output
-              --parameter-list image ${images} 
-              'nerdctl image pull --all-platforms {image} --unpack=false' 
-              --cleanup 'nerdctl image rm docker.io/{image}'
+        run: |
+          echo hyperfine --runs 5 --show-output --parameter-list image ${images} 
+
         env:
           images: >-
             docker.io/orfal/split:zstd-python-3.11,
