@@ -29,12 +29,18 @@ jobs:
 
       - name: benchmark
         run: sudo env "PATH=$PATH" hyperfine --runs 5
-              --parameter-list image orfal/split:zstd-python-3.11,orfal/split:original-python-3.11 
-              'nerdctl image pull --all-platforms docker.io/{image} --unpack=false' 
+              --parameter-list image ${{ images }} 
+              'nerdctl image pull --all-platforms {image} --unpack=false' 
               --cleanup 'nerdctl image rm docker.io/{image}'
+        with:
+          images: |
+            ${{ join([
+              'docker.io/orfal/split:zstd-python-3.11',
+              'docker.io/orfal/split:original-python-3.11',
+            ], ',') }}
 
 
-#      - name: unpack
+  #      - name: unpack
 #        run: nerdctl image pull --all-platforms docker.io/${{ matrix.image }} --unpack=false
 #      - name: Pull Docker image
 #        run: sudo ctr i pull --max-concurrent-downloads=50 docker.io/${{ matrix.image }} &2> /dev/null
