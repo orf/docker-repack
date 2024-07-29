@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 use std::io;
 use std::io::Write;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HashAndSize {
     hash: String,
     pub size: u64,

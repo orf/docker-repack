@@ -1,5 +1,8 @@
-use crate::image_parser::layer_reader::Layer;
+use crate::io::compression::CompressionType;
+use crate::io::layer::reader::{CompressedLayer, DecompressedLayer};
+use indicatif::MultiProgress;
 use oci_spec::image::{ImageConfiguration, ImageIndex, ImageManifest};
+use rayon::prelude::*;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -14,7 +17,7 @@ impl Display for SourceLayerID {
 }
 
 pub struct ImageReader {
-    layers: Vec<Layer>,
+    layers: Vec<CompressedLayer>,
     pub config: ImageConfiguration,
 }
 
@@ -28,7 +31,7 @@ pub fn read_blob<'a, T: for<'de> serde::Deserialize<'de>>(
 }
 
 impl ImageReader {
-    pub fn from_dir(image_dir: PathBuf) -> anyhow::Result<Self> {
+    pub fn from_dir(image_dir: PathBuf) -> anyhow::Result<ImageReader> {
         let blobs_dir = image_dir.join("blobs").join("sha256");
         let index_path = image_dir.join("index.json");
         let index_file = File::open(index_path)?;
@@ -48,26 +51,46 @@ impl ImageReader {
         let config_descriptor = manifest_file.config();
         let config: ImageConfiguration = read_blob(&blobs_dir, config_descriptor.digest())?;
 
-        let layers = manifest_file.layers();
-        let layers: Vec<_> = layers
+        let manifest_layers = manifest_file.layers();
+        let layers: Result<Vec<_>, anyhow::Error> = manifest_layers
             .iter()
             .enumerate()
             .map(|(idx, descriptor)| {
                 let digest = descriptor.digest().split_once(':').unwrap().1.to_string();
                 let size = descriptor.size() as u64;
-                Layer {
+                let media_type = descriptor.media_type();
+                let compression = CompressionType::from_media_type(media_type)?;
+                Ok(CompressedLayer {
                     id: SourceLayerID(idx),
                     path: blobs_dir.join(digest),
-                    // digest,
+                    compression,
                     size,
-                }
+                })
             })
             .collect();
+
+        let layers = layers?;
 
         Ok(Self { layers, config })
     }
 
-    pub fn layers(&self) -> &Vec<Layer> {
+    pub fn decompress_layers(
+        self,
+        progress: &MultiProgress,
+    ) -> anyhow::Result<(Vec<DecompressedLayer>, ImageConfiguration)> {
+        let decompressed_layers: Result<Vec<_>, anyhow::Error> = self
+            .layers
+            .into_par_iter()
+            .map(|layer| {
+                let new_path = layer.path.with_extension("raw");
+                layer.decompress(progress, new_path)
+            })
+            .collect();
+        let decompressed_layers = decompressed_layers?;
+        Ok((decompressed_layers, self.config))
+    }
+
+    pub fn layers(&self) -> &Vec<CompressedLayer> {
         &self.layers
     }
 }

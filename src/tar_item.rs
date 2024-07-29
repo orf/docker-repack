@@ -1,13 +1,11 @@
-use crate::image_parser::image_reader::SourceLayerID;
-use crate::image_parser::utils::byte_range_chunks;
+use crate::io::image::reader::SourceLayerID;
+use crate::utils::{byte_range_chunks, display_bytes};
 use anyhow::bail;
-use byte_unit::{Byte, UnitType};
 use const_hex::Buffer;
 use itertools::Itertools;
 use sha2::{Digest, Sha256};
-use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
-use std::io::Read;
+use std::io::{Read, Seek};
 use std::ops::Range;
 use std::path::PathBuf;
 use tar::{Entry, EntryType};
@@ -35,6 +33,7 @@ pub struct TarItem {
     pub layer_id: SourceLayerID,
     pub path: PathBuf,
     pub size: u64,
+    pub header_position: u64,
     type_: TarItemType,
 }
 
@@ -45,31 +44,20 @@ impl Display for TarItem {
             "TarItem layer_id={:?} path={:?} size={:#.1} type={}",
             self.layer_id,
             self.path,
-            Byte::from(self.size).get_appropriate_unit(UnitType::Decimal),
+            display_bytes(self.size),
             self.type_
         )
-    }
-}
-
-impl PartialOrd for TarItem {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for TarItem {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.type_.cmp(&other.type_)
     }
 }
 
 impl TarItem {
     pub fn from_entry(
         layer_index: SourceLayerID,
-        mut entry: &mut Entry<impl Read>,
+        mut entry: &mut Entry<impl Read + Seek>,
     ) -> anyhow::Result<Self> {
         let entry_size = entry.size();
         let entry_type = entry.header().entry_type();
+        let header_position = entry.raw_header_position();
         let path = entry.path()?.to_path_buf();
         let type_ = match entry_type {
             EntryType::Directory => TarItemType::Directory,
@@ -97,6 +85,7 @@ impl TarItem {
         Ok(Self {
             size: entry_size,
             layer_id: layer_index,
+            header_position,
             path,
             type_,
         })
@@ -187,16 +176,8 @@ impl TarItemChunk<'_> {
             self.byte_range.end
         ))
     }
-}
 
-impl Ord for TarItemChunk<'_> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        (self.tar_item, self.index).cmp(&(other.tar_item, other.index))
-    }
-}
-
-impl PartialOrd for TarItemChunk<'_> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
+    pub fn size(&self) -> u64 {
+        self.byte_range.end - self.byte_range.start
     }
 }

@@ -1,7 +1,6 @@
-use crate::image_parser::image_reader::SourceLayerID;
-use crate::image_parser::layer_operation::LayerOperations;
-use crate::image_parser::TarItem;
-use byte_unit::Byte;
+use crate::content::operations::LayerOperations;
+use crate::io::image::reader::SourceLayerID;
+use crate::tar_item::TarItem;
 use globset::GlobSet;
 use std::collections::BTreeMap;
 use std::ops::Bound::{Excluded, Unbounded};
@@ -10,11 +9,11 @@ use trie_rs::iter::KeysExt;
 pub type PathMap = BTreeMap<String, TarItem>;
 
 #[derive(Debug, Default, Clone)]
-pub struct LayerContents {
+pub struct MergedLayerContent {
     pub(crate) present_paths: PathMap,
 }
 
-impl LayerContents {
+impl MergedLayerContent {
     pub fn merge_operations(&mut self, layer_operations: LayerOperations) -> Self {
         let mut new_contents = self.clone();
 
@@ -49,12 +48,15 @@ impl LayerContents {
                     return;
                 }
             }
-            panic!("Tried to remove non-existent path '{path}' in layer {layer_index:?}");
+            panic!(
+                "Tried to remove non-existent path '{path}' in layer {:?}",
+                layer_index
+            );
         }
     }
 
-    pub fn exclude_globs(&mut self, glob_set: GlobSet) -> (usize, Byte) {
-        let initial_count = self.present_paths.len();
+    pub fn exclude_globs(&mut self, glob_set: GlobSet) -> (u64, u64) {
+        let initial_count = self.present_paths.len() as u64;
         let initial_size = self.present_paths.values().map(|p| p.size).sum::<u64>();
         self.present_paths.retain(|path, item| {
             if let Some(link_target) = item.link_target() {
@@ -62,16 +64,17 @@ impl LayerContents {
             }
             !glob_set.is_match(path)
         });
-        let new_count = self.present_paths.len();
+        let new_count = self.present_paths.len() as u64;
         let new_size = self.present_paths.values().map(|p| p.size).sum::<u64>();
-        (
-            initial_count - new_count,
-            Byte::from(initial_size - new_size),
-        )
+        (initial_count - new_count, initial_size - new_size)
     }
 
     pub fn len(&self) -> usize {
         self.present_paths.len()
+    }
+
+    pub fn total_size(&self) -> u64 {
+        self.present_paths.values().map(|v| v.size).sum()
     }
 
     pub fn into_inner(self) -> PathMap {
