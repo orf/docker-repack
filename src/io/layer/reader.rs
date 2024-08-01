@@ -15,6 +15,7 @@ pub struct CompressedLayer {
     pub id: SourceLayerID,
     pub path: PathBuf,
     pub size: u64,
+    pub compressed_size: u64,
     pub compression: CompressionType,
 }
 

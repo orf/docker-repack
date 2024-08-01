@@ -60,11 +60,14 @@ impl ImageReader {
                 let size = descriptor.size() as u64;
                 let media_type = descriptor.media_type();
                 let compression = CompressionType::from_media_type(media_type)?;
+                let path = blobs_dir.join(digest);
+                let compressed_size = path.metadata()?.len();
                 Ok(CompressedLayer {
                     id: SourceLayerID(idx),
-                    path: blobs_dir.join(digest),
+                    path,
                     compression,
                     size,
+                    compressed_size,
                 })
             })
             .collect();
@@ -92,5 +95,9 @@ impl ImageReader {
 
     pub fn layers(&self) -> &Vec<CompressedLayer> {
         &self.layers
+    }
+
+    pub fn compressed_size(&self) -> u64 {
+        self.layers.iter().map(|l| l.compressed_size).sum()
     }
 }

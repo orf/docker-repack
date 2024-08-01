@@ -23,6 +23,10 @@ pub fn repack(
     // Can't make this const :/
 
     info!("Found {} layers", image.layers().len());
+    info!(
+        "Total compressed size: {}",
+        display_bytes(image.compressed_size())
+    );
     let (decompressed_layers, image_config) = image.decompress_layers(&progress)?;
     let layer_contents =
         crate::cmd::utils::get_layer_contents(&progress, &decompressed_layers, exclude)?;
