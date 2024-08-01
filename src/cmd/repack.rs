@@ -24,7 +24,7 @@ pub fn repack(
 
     info!("Found {} layers", image.layers().len());
     info!(
-        "Total compressed size: {}",
+        "Total compressed size: {:#.1}",
         display_bytes(image.compressed_size())
     );
     let (decompressed_layers, image_config) = image.decompress_layers(&progress)?;
@@ -33,7 +33,7 @@ pub fn repack(
     info!("Image read complete:");
     info!("Total items: {}", layer_contents.len());
     info!(
-        "Total size: {:#.1}",
+        "Total raw size: {:#.1}",
         display_bytes(layer_contents.total_size())
     );
 

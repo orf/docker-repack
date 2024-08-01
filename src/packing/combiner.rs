@@ -23,7 +23,9 @@ impl<'a> FileCombiner<'a> {
         self.chunked_files.is_empty()
     }
 
-    pub fn len(&self) -> usize { self.chunked_files.len()}
+    pub fn len(&self) -> usize {
+        self.chunked_files.len()
+    }
 
     pub fn add_chunked_file(&mut self, item: &'a TarItem, chunks: Vec<TarItemChunk<'a>>) {
         self.chunked_files.push((item, chunks))
