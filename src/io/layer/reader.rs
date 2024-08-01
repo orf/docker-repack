@@ -7,7 +7,7 @@ use indicatif::MultiProgress;
 use memmap2::Mmap;
 use std::fs::File;
 use std::io;
-use std::io::{Cursor, Read, Seek};
+use std::io::{BufRead, Cursor, Seek};
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -24,7 +24,7 @@ impl CompressedLayer {
         &self,
         progress: &MultiProgress,
         message_prefix: &'static str,
-    ) -> anyhow::Result<impl Read> {
+    ) -> anyhow::Result<impl BufRead> {
         let file = File::open(&self.path)?;
         let file = new_mmap(file, true)?;
         let reader = utils::progress_reader(
@@ -80,7 +80,7 @@ impl DecompressedLayer {
         &self,
         progress: &MultiProgress,
         message_prefix: &'static str,
-    ) -> anyhow::Result<impl Read + Seek> {
+    ) -> anyhow::Result<impl BufRead + Seek> {
         let file = self.get_reader()?;
         let reader = utils::progress_reader(
             progress,

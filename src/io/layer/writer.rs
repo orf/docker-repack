@@ -6,7 +6,7 @@ use anyhow::bail;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io;
-use std::io::Write;
+use std::io::{BufRead, Write};
 use std::io::{BufWriter, Read, Seek};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -72,7 +72,7 @@ impl LayerWriter {
         Ok(())
     }
 
-    pub fn copy_item(&mut self, item: Entry<impl Read>) -> anyhow::Result<()> {
+    pub fn copy_item(&mut self, item: Entry<impl BufRead>) -> anyhow::Result<()> {
         let byte_range = 0..item.size();
         self.write_index(&byte_range, &item)?;
 
@@ -90,7 +90,7 @@ impl LayerWriter {
 
     pub fn copy_partial_item(
         &mut self,
-        item: Entry<impl Read + Seek>,
+        item: Entry<impl BufRead + Seek>,
         range: Range<u64>,
         new_path: PathBuf,
         data: &[u8],

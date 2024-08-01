@@ -11,7 +11,7 @@ use std::io::Cursor;
 use std::ops::Range;
 use std::path::PathBuf;
 use tar::Archive;
-use tracing::info;
+use tracing::{info, trace};
 
 #[derive(Debug, strum_macros::Display)]
 pub enum RepackOperationType {
@@ -19,13 +19,15 @@ pub enum RepackOperationType {
     WritePartialItem(Range<u64>, PathBuf),
 }
 
+pub type SortKey = String;
+
 #[derive(Debug)]
 pub struct RepackOperation {
     source: SourceLayerID,
     item_offset: u64,
 
     dest: NewLayerID,
-    sort_key: String,
+    sort_key: SortKey,
     type_: RepackOperationType,
 }
 
@@ -54,7 +56,7 @@ impl RepackOperation {
             type_: RepackOperationType::WritePartialItem(range, path),
         }
     }
-    fn sort_key(item: &TarItem) -> String {
+    fn sort_key(item: &TarItem) -> SortKey {
         item.path.to_str().unwrap().to_string()
     }
 }
@@ -104,7 +106,7 @@ impl RepackPlan {
     ) -> anyhow::Result<ImageWriter<'a>> {
         info!("Executing plan");
         self.operations.sort_by(|r1, r2| {
-            (r1.source, r1.dest, &r1.sort_key).cmp(&(r2.source, r2.dest, &r2.sort_key))
+            (r1.dest, &r1.sort_key, r1.source).cmp(&(r2.dest, &r2.sort_key, r2.source))
         });
 
         let progress_bar = create_pbar(progress, self.operations.len() as u64, "Repacking", false);
@@ -133,6 +135,11 @@ impl RepackPlan {
             {
                 let new_layer_writer = image_writer.get_layer(new_layer_id);
                 for operation in chunk {
+                    trace!(
+                        "path={} sort_key={:?}",
+                        operation.item_offset,
+                        operation.sort_key
+                    );
                     source_layer_archive =
                         source_layer_archive.seek_to(operation.item_offset as usize)?;
                     match operation.type_ {

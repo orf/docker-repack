@@ -24,7 +24,6 @@ trie-rs = "0.4.2"
 zstd = "0.13.2"
 strum_macros = "0.26.4"
 globset = { version = "0.4.14", features = ["serde"] }
-comfy-table = { version = "7.1.1", default-features = false }
 clap-num = "1.1.1"
 tracing = { version = "0.1.40", features = ["release_max_level_debug"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

@@ -7,11 +7,12 @@ tasks:
   test:
     interactive: true
     vars:
-      image: 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
+#      image: 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
+      image: 'python:3.11'
     cmds:
       - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
-      - cargo run --profile=lto -- oci/{{.image | replace ":" "/" }}/ repack --target-size=500MB --exclude='*.pyc' {{.CLI_ARGS}}
-      - skopeo copy --override-arch=arm64 --override-os=linux oci:oci/{{.image | replace ":" "/" }}/image_new/ docker-daemon:foo:abc
+      - cargo run --profile=release -- oci/{{.image | replace ":" "/" }}/ repack --compression-level=19 --target-size=500MB --exclude='*.pyc' {{.CLI_ARGS}}
+#      - skopeo copy --override-arch=arm64 --override-os=linux oci:oci/{{.image | replace ":" "/" }}/image_new/ docker-daemon:foo:abc
 
   run-and-export:
     requires:
@@ -30,8 +31,6 @@ tasks:
       - cargo run --profile=lto -- oci/{{.image | replace ":" "/" }}/ repack --target-size=300MB --compression-level={{.compression_level}} --split-files=100MB
       - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:split-{{.image_slug}}
       - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ docker://orfal/split:original-{{.image_slug}}
-  #      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ dir://{{.tmp_dir}} --dest-compress --dest-compress-format=zstd --dest-compress-level={{.compression_level}}
-  #      - skopeo copy --override-arch=arm64 --override-os=linux dir://{{.tmp_dir}}  docker://orfal/split:zstd-{{.image_slug}}
 
   test-all:
     cmds:

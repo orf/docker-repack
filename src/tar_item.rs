@@ -5,7 +5,7 @@ use const_hex::Buffer;
 use itertools::Itertools;
 use sha2::{Digest, Sha256};
 use std::fmt::{Display, Formatter};
-use std::io::{Read, Seek};
+use std::io::{BufRead, Seek};
 use std::ops::Range;
 use std::path::PathBuf;
 use tar::{Entry, EntryType};
@@ -53,7 +53,7 @@ impl Display for TarItem {
 impl TarItem {
     pub fn from_entry(
         layer_index: SourceLayerID,
-        mut entry: &mut Entry<impl Read + Seek>,
+        mut entry: &mut Entry<impl BufRead + Seek>,
     ) -> anyhow::Result<Self> {
         let entry_size = entry.size();
         let entry_type = entry.header().entry_type();
