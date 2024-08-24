@@ -51,13 +51,13 @@ impl<'a> LayerBin<'a> {
 }
 
 pub struct SimpleLayerPacker<'a> {
-    image_writer: ImageWriter<'a>,
+    image_writer: ImageWriter,
     layer_bins: Vec<LayerBin<'a>>,
     target_size: u64,
 }
 
 impl<'a> SimpleLayerPacker<'a> {
-    pub fn new(image_writer: ImageWriter<'a>, target_size: u64) -> SimpleLayerPacker<'a> {
+    pub fn new(image_writer: ImageWriter, target_size: u64) -> SimpleLayerPacker<'a> {
         Self {
             target_size,
             image_writer,
@@ -65,7 +65,7 @@ impl<'a> SimpleLayerPacker<'a> {
         }
     }
 
-    pub fn into_inner(self) -> ImageWriter<'a> {
+    pub fn into_inner(self) -> ImageWriter {
         self.image_writer
     }
 

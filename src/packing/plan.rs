@@ -98,12 +98,12 @@ impl RepackPlan {
         }
     }
 
-    pub fn execute<'a>(
+    pub fn execute(
         mut self,
-        progress: &'a MultiProgress,
-        mut image_writer: ImageWriter<'a>,
+        progress: &MultiProgress,
+        mut image_writer: ImageWriter,
         source_layers: Vec<DecompressedLayer>,
-    ) -> anyhow::Result<ImageWriter<'a>> {
+    ) -> anyhow::Result<ImageWriter> {
         info!("Executing plan");
         self.operations.sort_by(|r1, r2| {
             (r1.dest, &r1.sort_key, r1.source).cmp(&(r2.dest, &r2.sort_key, r2.source))
@@ -188,12 +188,6 @@ impl<'a> SeekableArchive<'a> {
     }
 
     pub fn read_entry(&mut self) -> anyhow::Result<tar::Entry<Cursor<&'a [u8]>>> {
-        let mut entries = self.archive.entries()?;
-        let next = entries.next().unwrap()?;
-        Ok(next)
-    }
-
-    pub fn read_entry_header(&'a mut self) -> anyhow::Result<tar::Entry<Cursor<&'a [u8]>>> {
         let mut entries = self.archive.entries()?;
         let next = entries.next().unwrap()?;
         Ok(next)

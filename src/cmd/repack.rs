@@ -19,19 +19,40 @@ pub fn repack(
     exclude: Option<GlobSet>,
     compression_level: CompressionLevel,
     skip_compression: bool,
+    keep_temp_files: bool,
 ) -> anyhow::Result<()> {
-    // Can't make this const :/
-
     info!("Found {} layers", image.layers().len());
     info!(
         "Total compressed size: {:#.1}",
         display_bytes(image.compressed_size())
     );
-    let (decompressed_layers, image_config) = image.decompress_layers(&progress)?;
+
+    let mut image_writer = ImageWriter::new(output_dir)?;
+
+    let (decompressed_layers, image_config) = image.decompress_layers(&image_writer, &progress)?;
+
     let layer_contents =
         crate::cmd::utils::get_layer_contents(&progress, &decompressed_layers, exclude)?;
     info!("Image read complete:");
-    info!("Total items: {}", layer_contents.len());
+
+    info!(
+        "Total items: {} ({:#.1})",
+        layer_contents.added_files.count,
+        display_bytes(layer_contents.added_files.size)
+    );
+    info!(
+        "Total removed: {} ({:#.1})",
+        layer_contents.removed_files.count,
+        display_bytes(layer_contents.removed_files.size)
+    );
+    info!(
+        "Total excluded: {} ({:#.1})",
+        layer_contents.excluded_files.count,
+        display_bytes(layer_contents.excluded_files.size)
+    );
+
+    info!("Total items in output: {}", layer_contents.len());
+    info!("Total items removed from output: {}", layer_contents.added_files.count - layer_contents.len() as u64);
     info!(
         "Total raw size: {:#.1}",
         display_bytes(layer_contents.total_size())
@@ -39,7 +60,6 @@ pub fn repack(
 
     let path_map = layer_contents.into_inner();
 
-    let mut image_writer = ImageWriter::new(output_dir)?;
     let tiny_items_layer = image_writer.create_new_layer("tiny-items")?;
 
     let mut layer_packer = SimpleLayerPacker::new(image_writer, target_size.as_u64());
@@ -105,6 +125,11 @@ pub fn repack(
         .map(|(_, item)| item)
         .collect_vec();
 
+
+    if !keep_temp_files {
+        image_writer.remove_temp_files()?;
+    }
+
     image_writer.write_index(
         &sorted_layers,
         image_config,
@@ -113,6 +138,9 @@ pub fn repack(
     )?;
 
     let total_size = sorted_layers.iter().map(|(_, size)| size.size).sum::<u64>();
+    info!("Total image size  : {:#.1}", display_bytes(total_size));
+    info!("Total image layers: {}", sorted_layers.len());
+
     for (layer, hash_and_size) in sorted_layers {
         debug!(
             "{layer} - compressed: {} / Size: {:#.1}",
@@ -120,7 +148,6 @@ pub fn repack(
             display_bytes(hash_and_size.size)
         );
     }
-    info!("Total image size: {:#.1}", display_bytes(total_size));
 
     Ok(())
 }

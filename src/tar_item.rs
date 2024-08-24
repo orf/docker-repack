@@ -139,10 +139,6 @@ impl TarItem {
         matches!(self.type_, TarItemType::File(_))
     }
 
-    pub fn is_non_empty_file(&self) -> bool {
-        matches!(self.type_, TarItemType::File(FileType::NotEmpty(_)))
-    }
-
     pub fn is_tiny_file(&self) -> bool {
         self.is_file() && self.size < 1024
     }

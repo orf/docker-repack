@@ -1,8 +1,6 @@
 use crate::io::compression::write::compress_file;
 use crate::io::hashed_writer::{HashAndSize, HashedWriter};
-use crate::io::image::reader::SourceLayerID;
 use crate::io::layer::writer::{LayerWriter, WrittenLayer};
-use anyhow::bail;
 use chrono::Utc;
 use indicatif::MultiProgress;
 use itertools::Itertools;
@@ -12,9 +10,7 @@ use oci_spec::image::{
 };
 use rayon::prelude::*;
 use serde_json::json;
-use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::ops::Range;
 use std::path::{Path, PathBuf};
 use tracing::info;
 use zstd::zstd_safe::CompressionLevel;
@@ -28,18 +24,14 @@ impl Display for NewLayerID {
     }
 }
 
-pub type PathKey<'a> = (SourceLayerID, &'a str, Range<u64>);
-pub type PathValue = (NewLayerID, Option<PathBuf>);
-
-pub struct ImageWriter<'a> {
-    directory: PathBuf,
-    blobs_dir: PathBuf,
-    temp_dir: PathBuf,
-    layers: Vec<LayerWriter>,
-    paths: HashMap<PathKey<'a>, PathValue>,
+pub struct ImageWriter {
+    pub directory: PathBuf,
+    pub blobs_dir: PathBuf,
+    pub temp_dir: PathBuf,
+    pub layers: Vec<LayerWriter>,
 }
 
-impl<'a> ImageWriter<'a> {
+impl ImageWriter {
     pub fn new(directory: PathBuf) -> anyhow::Result<Self> {
         let blobs_dir = directory.join("blobs").join("sha256");
         let temp_dir = directory.join("temp");
@@ -54,8 +46,11 @@ impl<'a> ImageWriter<'a> {
             blobs_dir,
             temp_dir,
             layers: Vec::new(),
-            paths: HashMap::new(),
         })
+    }
+
+    pub fn remove_temp_files(&self) -> std::io::Result<()> {
+        std::fs::remove_dir_all(&self.temp_dir)
     }
 
     pub fn get_layer(&mut self, new_layer_id: NewLayerID) -> &mut LayerWriter {
@@ -68,29 +63,6 @@ impl<'a> ImageWriter<'a> {
         let layer = LayerWriter::create_layer(layer_id, path)?;
         self.layers.push(layer);
         Ok(layer_id)
-    }
-
-    pub fn add_layer_paths(
-        &mut self,
-        name: &'static str,
-        paths: impl Iterator<Item = (SourceLayerID, &'a str, Range<u64>, Option<PathBuf>)>,
-    ) -> anyhow::Result<()> {
-        let layer_id = self.create_new_layer(name)?;
-        for (source_layer_id, path, byte_range, override_path) in paths.into_iter() {
-            if let Some((t, old_override_path)) = self.paths.insert(
-                (source_layer_id, path, byte_range),
-                (layer_id, override_path),
-            ) {
-                bail!(
-                    "Path '{path}' in source {source_layer_id:?} is present in multiple output \
-                    layers: {} and {} (override path: {old_override_path:?})",
-                    t.0,
-                    layer_id.0
-                );
-            }
-        }
-
-        Ok(())
     }
 
     pub fn write_blob<T: serde::Serialize>(

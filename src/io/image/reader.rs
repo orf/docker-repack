@@ -1,11 +1,13 @@
 use crate::io::compression::CompressionType;
+use crate::io::image::writer::ImageWriter;
 use crate::io::layer::reader::{CompressedLayer, DecompressedLayer};
+use anyhow::anyhow;
 use indicatif::MultiProgress;
 use oci_spec::image::{ImageConfiguration, ImageIndex, ImageManifest};
 use rayon::prelude::*;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct SourceLayerID(pub usize);
@@ -31,7 +33,7 @@ pub fn read_blob<'a, T: for<'de> serde::Deserialize<'de>>(
 }
 
 impl ImageReader {
-    pub fn from_dir(image_dir: PathBuf) -> anyhow::Result<ImageReader> {
+    pub fn from_dir(image_dir: &Path) -> anyhow::Result<ImageReader> {
         let blobs_dir = image_dir.join("blobs").join("sha256");
         let index_path = image_dir.join("index.json");
         let index_file = File::open(index_path)?;
@@ -79,13 +81,18 @@ impl ImageReader {
 
     pub fn decompress_layers(
         self,
+        image_writer: &ImageWriter,
         progress: &MultiProgress,
     ) -> anyhow::Result<(Vec<DecompressedLayer>, ImageConfiguration)> {
         let decompressed_layers: Result<Vec<_>, anyhow::Error> = self
             .layers
             .into_par_iter()
             .map(|layer| {
-                let new_path = layer.path.with_extension("raw");
+                let layer_file_name = layer.path.file_name().ok_or(anyhow!("No path name"))?;
+                let new_path = image_writer
+                    .temp_dir
+                    .join(layer_file_name)
+                    .with_extension("raw");
                 layer.decompress(progress, new_path)
             })
             .collect();

@@ -1,40 +1,94 @@
 version: "3"
 
 vars:
-  IMAGES: [ 'python:3.11', 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04', 'tensorflow/tensorflow:2.17.0-gpu' ]
+  IMAGES:
+    - 'python:3.11'
+    - 'node:20'
+    - 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
+    - 'neo4j:enterprise'
+    - 'elasticsearch:8.15.0'
+    - 'tensorflow/tensorflow:2.17.0-gpu'
+
+  SIZES:
+    - 50
+    - 100
+    - 200
+    - 300
 
 tasks:
-  test:
-    interactive: true
-    vars:
-#      image: 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
-      image: 'python:3.11'
+  download-all-images:
     cmds:
-      - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
-      - cargo run --profile=release -- oci/{{.image | replace ":" "/" }}/ repack --compression-level=19 --target-size=500MB --exclude='*.pyc' {{.CLI_ARGS}}
-#      - skopeo copy --override-arch=arm64 --override-os=linux oci:oci/{{.image | replace ":" "/" }}/image_new/ docker-daemon:foo:abc
-
-  run-and-export:
-    requires:
-      vars: [ image ]
-    vars:
-      compression_level: 19
-      image_path: 'oci/{{.image | replace ":" "/" }}'
-      image_slug: '{{.image | replace ":" "-" | replace "/" "-" }}'
-      tmp_dir:
-        sh: mktemp -d
-    interactive: true
-    cmds:
-      - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
-      - cargo run --profile=lto -- oci/{{.image | replace ":" "/" }}/ repack --target-size=300MB --compression-level={{.compression_level}}
-      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:repacked-{{.image_slug}}
-      - cargo run --profile=lto -- oci/{{.image | replace ":" "/" }}/ repack --target-size=300MB --compression-level={{.compression_level}} --split-files=100MB
-      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:split-{{.image_slug}}
-      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ docker://orfal/split:original-{{.image_slug}}
-
-  test-all:
-    cmds:
+      - mkdir -p oci/original/
       - for: { var: IMAGES }
-        task: run-and-export
+        cmd: |
+          echo {{.ITEM}}
+          skopeo --override-arch=amd64 --override-os=linux copy docker://{{.ITEM}} oci:oci/original/{{.ITEM| replace "/" "-" | replace ":" "-"}} --image-parallel-copies=10
+  
+  compress-all-images:
+    cmds:
+      - rm -rf oci/repacked/ || true
+      - mkdir -p oci/repacked
+      - cargo build --release
+      - for: { var: IMAGES }
+        task: compress-image
         vars:
-          image: '{{.ITEM}}'
+          IMAGE: '{{.ITEM| replace "/" "-" | replace ":" "-"}}'
+
+  compress-image:
+    requires:
+      vars: [IMAGE]
+    cmds:
+      - for: { var: SIZES }
+        cmd: cargo run --quiet --profile=release -- --compression-level=9 --target-size={{.ITEM}}MB --exclude='*.pyc' oci/original/{{.IMAGE}}/ oci/repacked/{{.IMAGE}}/{{.ITEM}}/
+
+  upload-all-images:
+    cmds:
+      - cargo build --release
+      - for: { var: IMAGES }
+        task: upload-image
+        vars:
+          IMAGE: '{{.ITEM| replace "/" "-" | replace ":" "-"}}'
+
+  upload-image:
+    requires:
+      vars: [ IMAGE ]
+    cmds:
+      - skopeo copy oci:oci/original/{{.IMAGE}}/ docker://orfal/repack:original-{{.IMAGE}} --image-parallel-copies=10
+      - for: { var: SIZES }
+        cmd: skopeo copy oci:oci/repacked/{{.IMAGE}}/{{.ITEM}}/ docker://orfal/repack:repacked-{{.ITEM}}-{{.IMAGE}} --image-parallel-copies=10
+
+
+#  test:
+#    interactive: true
+#    vars:
+##      image: 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
+#      image: 'python:3.11'
+#    cmds:
+#      - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
+#      - cargo run --profile=release -- oci/{{.image | replace ":" "/" }}/ repack --compression-level=19 --target-size=500MB --exclude='*.pyc' {{.CLI_ARGS}}
+##      - skopeo copy --override-arch=arm64 --override-os=linux oci:oci/{{.image | replace ":" "/" }}/image_new/ docker-daemon:foo:abc
+#
+#  run-and-export:
+#    requires:
+#      vars: [ image ]
+#    vars:
+#      compression_level: 19
+#      image_path: 'oci/{{.image | replace ":" "/" }}'
+#      image_slug: '{{.image | replace ":" "-" | replace "/" "-" }}'
+#      tmp_dir:
+#        sh: mktemp -d
+#    interactive: true
+#    cmds:
+#      - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
+#      - cargo run --profile=lto -- oci/{{.image | replace ":" "/" }}/ repack --target-size=300MB --compression-level={{.compression_level}}
+#      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:repacked-{{.image_slug}}
+#      - cargo run --profile=lto -- oci/{{.image | replace ":" "/" }}/ repack --target-size=300MB --compression-level={{.compression_level}} --split-files=100MB
+#      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:split-{{.image_slug}}
+#      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ docker://orfal/split:original-{{.image_slug}}
+#
+#  test-all:
+#    cmds:
+#      - for: { var: IMAGES }
+#        task: run-and-export
+#        vars:
+#          image: '{{.ITEM}}'
