@@ -139,7 +139,7 @@ impl ImageWriter {
         finished_layers: &[(WrittenLayer, HashAndSize)],
         mut config: ImageConfiguration,
         skip_compression: bool,
-        entrypoint_override: Option<Vec<String>>,
+        #[cfg(feature = "split_files")] entrypoint_override: Option<Vec<String>>,
     ) -> anyhow::Result<()> {
         let root_fs = config.rootfs_mut();
         let diff_ids = root_fs.diff_ids_mut();
@@ -149,6 +149,7 @@ impl ImageWriter {
                 .iter()
                 .map(|(layer, _)| layer.hash.prefixed_hash()),
         );
+        #[cfg(feature = "split_files")]
         if let Some(mut entrypoint_override) = entrypoint_override {
             if let Some(ref img_config) = config.config() {
                 let mut cloned = img_config.clone();

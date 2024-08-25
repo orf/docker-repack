@@ -2,3 +2,4 @@
 oci/
 *.txt
 .idea/
+compress.log

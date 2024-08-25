@@ -5,12 +5,22 @@ use crate::utils::display_bytes;
 use anyhow::bail;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
+
+#[cfg(feature = "split_files")]
 use std::io;
+#[cfg(feature = "split_files")]
+use std::path::Path;
+#[cfg(feature = "split_files")]
+use tar::Header;
+
 use std::io::{BufRead, Write};
-use std::io::{BufWriter, Read, Seek};
+use std::io::{BufWriter, Read};
 use std::ops::Range;
-use std::path::{Path, PathBuf};
-use tar::{Builder, Entry, EntryType, Header};
+use std::path::PathBuf;
+use tar::{Builder, Entry, EntryType};
+
+#[cfg(feature = "split_files")]
+use std::io::Seek;
 
 pub struct LayerWriter {
     id: NewLayerID,
@@ -52,6 +62,7 @@ impl LayerWriter {
         Ok(())
     }
 
+    #[cfg(feature = "split_files")]
     pub fn new_directory(&mut self, path: impl AsRef<Path>, mode: u32) -> anyhow::Result<()> {
         for parent in path.as_ref().components().rev() {
             let mut header = Header::new_gnu();
@@ -63,6 +74,7 @@ impl LayerWriter {
         Ok(())
     }
 
+    #[cfg(feature = "split_files")]
     pub fn new_item(&mut self, path: &Path, mode: u32, data: &[u8]) -> anyhow::Result<()> {
         let mut header = Header::new_gnu();
         header.set_entry_type(EntryType::Regular);
@@ -88,6 +100,7 @@ impl LayerWriter {
         Ok(())
     }
 
+    #[cfg(feature = "split_files")]
     pub fn copy_partial_item(
         &mut self,
         item: Entry<impl BufRead + Seek>,
@@ -114,7 +127,7 @@ impl LayerWriter {
     }
 
     pub fn finish(self) -> anyhow::Result<WrittenLayer> {
-        let inner = self.archive_writer.into_inner().unwrap();
+        let inner = self.archive_writer.into_inner()?;
         let inner = inner.into_inner()?;
         let (_, hash) = inner.into_inner();
         Ok(WrittenLayer {
@@ -139,7 +152,7 @@ impl Display for WrittenLayer {
         write!(f, "WrittenLayer: ")?;
         write!(
             f,
-            "size={:#<6.1} entries={:<5} path={}",
+            "raw_size={:#<6.1} entries={:<5} path={}",
             display_bytes(self.hash.size),
             self.entries,
             self.path.display()

@@ -42,13 +42,14 @@ struct Args {
     skip_compression: bool,
 
     #[arg(short, long)]
-    exclude: Option<Vec<globset::Glob>>,
+    exclude: Option<Vec<Glob>>,
 
+    #[cfg(feature = "split_files")]
     #[arg(short, long)]
     split_files: Option<Byte>,
 
     #[arg(long)]
-    keep_temp_files: bool
+    keep_temp_files: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -76,11 +77,12 @@ fn main() -> anyhow::Result<()> {
         image,
         args.output_dir,
         args.target_size,
+        #[cfg(feature = "split_files")]
         args.split_files,
         exclude,
         args.compression_level,
         args.skip_compression,
-        args.keep_temp_files
+        args.keep_temp_files,
     )
 }
 
@@ -92,7 +94,10 @@ fn create_glob_set(exclude: Option<Vec<globset::Glob>>) -> anyhow::Result<Option
             for glob in globs {
                 let mut glob = glob;
                 if glob.glob().starts_with('/') {
-                    warn!("Stripping / prefix from glob {} - globs should be relative to /", glob);
+                    warn!(
+                        "Stripping / prefix from glob {} - globs should be relative to /",
+                        glob
+                    );
                     glob = Glob::new(&glob.glob()[1..])?;
                 }
                 builder.add(glob);

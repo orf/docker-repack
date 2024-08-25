@@ -4,10 +4,10 @@ vars:
   IMAGES:
     - 'python:3.11'
     - 'node:20'
-    - 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
     - 'neo4j:enterprise'
     - 'elasticsearch:8.15.0'
     - 'tensorflow/tensorflow:2.17.0-gpu'
+    - 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
 
   SIZES:
     - 50
@@ -18,17 +18,28 @@ vars:
 tasks:
   download-all-images:
     cmds:
-      - mkdir -p oci/original/
+      - rm -rf oci/original-zstd/ || true
       - for: { var: IMAGES }
-        cmd: |
-          echo {{.ITEM}}
-          skopeo --override-arch=amd64 --override-os=linux copy docker://{{.ITEM}} oci:oci/original/{{.ITEM| replace "/" "-" | replace ":" "-"}} --image-parallel-copies=10
-  
+        task: download-image
+        vars:
+          IMAGE: "{{ .ITEM }}"
+
+  download-image:
+    requires:
+      vars: [ IMAGE ]
+    cmds:
+      - mkdir -p oci/original/
+      - mkdir -p oci/original-zstd/
+      - echo {{.IMAGE}}
+      - skopeo --override-arch=amd64 --override-os=linux copy docker://{{.IMAGE}} oci:oci/original/{{.IMAGE| replace "/" "-" | replace ":" "-"}} --image-parallel-copies=10
+      - skopeo --override-arch=amd64 --override-os=linux copy oci:oci/original/{{.IMAGE| replace "/" "-" | replace ":" "-"}} oci:oci/original-zstd/{{.IMAGE| replace "/" "-" | replace ":" "-"}} --image-parallel-copies=10 --dest-compress --dest-compress-format=zstd --dest-compress-level=9
+
   compress-all-images:
     cmds:
+      - rm compress.log || true
       - rm -rf oci/repacked/ || true
       - mkdir -p oci/repacked
-      - cargo build --release
+      - cargo build --profile=lto
       - for: { var: IMAGES }
         task: compress-image
         vars:
@@ -39,11 +50,10 @@ tasks:
       vars: [IMAGE]
     cmds:
       - for: { var: SIZES }
-        cmd: cargo run --quiet --profile=release -- --compression-level=9 --target-size={{.ITEM}}MB --exclude='*.pyc' oci/original/{{.IMAGE}}/ oci/repacked/{{.IMAGE}}/{{.ITEM}}/
+        cmd: cargo run --quiet --profile=lto -- --compression-level=9 --target-size={{.ITEM}}MiB --exclude='*.pyc' oci/original/{{.IMAGE}}/ oci/repacked/{{.IMAGE}}/{{.ITEM}}/ >> compress.log
 
   upload-all-images:
     cmds:
-      - cargo build --release
       - for: { var: IMAGES }
         task: upload-image
         vars:
@@ -53,7 +63,8 @@ tasks:
     requires:
       vars: [ IMAGE ]
     cmds:
-      - skopeo copy oci:oci/original/{{.IMAGE}}/ docker://orfal/repack:original-{{.IMAGE}} --image-parallel-copies=10
+      - skopeo copy oci:oci/original/{{.IMAGE}}/ docker://orfal/repack:original-gzip-{{.IMAGE}} --image-parallel-copies=10
+      - skopeo copy oci:oci/original-zstd/{{.IMAGE}}/ docker://orfal/repack:original-zstd-{{.IMAGE}} --image-parallel-copies=10
       - for: { var: SIZES }
         cmd: skopeo copy oci:oci/repacked/{{.IMAGE}}/{{.ITEM}}/ docker://orfal/repack:repacked-{{.ITEM}}-{{.IMAGE}} --image-parallel-copies=10
 

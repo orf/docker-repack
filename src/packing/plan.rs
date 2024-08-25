@@ -8,14 +8,18 @@ use indicatif::{MultiProgress, ProgressIterator};
 use itertools::Itertools;
 use memmap2::Mmap;
 use std::io::Cursor;
-use std::ops::Range;
-use std::path::PathBuf;
 use tar::Archive;
 use tracing::{info, trace};
+
+#[cfg(feature = "split_files")]
+use std::ops::Range;
+#[cfg(feature = "split_files")]
+use std::path::PathBuf;
 
 #[derive(Debug, strum_macros::Display)]
 pub enum RepackOperationType {
     WriteWholeItem,
+    #[cfg(feature = "split_files")]
     WritePartialItem(Range<u64>, PathBuf),
 }
 
@@ -42,6 +46,7 @@ impl RepackOperation {
         }
     }
 
+    #[cfg(feature = "split_files")]
     pub fn new_partial_item(
         item: &TarItem,
         dest: NewLayerID,
@@ -77,6 +82,7 @@ impl RepackPlan {
             .push(RepackOperation::new_whole_item(item, dest));
     }
 
+    #[cfg(feature = "split_files")]
     pub fn add_partial_item(
         &mut self,
         dest: NewLayerID,
@@ -147,6 +153,7 @@ impl RepackPlan {
                             let item = source_layer_archive.read_entry()?;
                             new_layer_writer.copy_item(item)?;
                         }
+                        #[cfg(feature = "split_files")]
                         RepackOperationType::WritePartialItem(range, new_path) => {
                             let item = source_layer_archive.read_entry()?;
                             let complete_item_data =

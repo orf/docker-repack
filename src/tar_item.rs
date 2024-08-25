@@ -1,14 +1,21 @@
 use crate::io::image::reader::SourceLayerID;
-use crate::utils::{byte_range_chunks, display_bytes};
+use crate::utils::display_bytes;
 use anyhow::bail;
-use const_hex::Buffer;
-use itertools::Itertools;
+
 use sha2::{Digest, Sha256};
 use std::fmt::{Display, Formatter};
 use std::io::{BufRead, Seek};
-use std::ops::Range;
 use std::path::PathBuf;
 use tar::{Entry, EntryType};
+
+#[cfg(feature = "split_files")]
+use crate::utils::byte_range_chunks;
+#[cfg(feature = "split_files")]
+use const_hex::Buffer;
+#[cfg(feature = "split_files")]
+use itertools::Itertools;
+#[cfg(feature = "split_files")]
+use std::ops::Range;
 
 pub type TarItemKey<'a> = (SourceLayerID, &'a PathBuf);
 
@@ -102,6 +109,7 @@ impl TarItem {
         }
     }
 
+    #[cfg(feature = "split_files")]
     pub fn content_hash_hex(&self) -> Option<Buffer<32>> {
         match self.content_hash() {
             None => None,
@@ -143,6 +151,7 @@ impl TarItem {
         self.is_file() && self.size < 1024
     }
 
+    #[cfg(feature = "split_files")]
     pub fn split_into_chunks(&self, chunk_size: u64) -> Vec<TarItemChunk> {
         byte_range_chunks(self.size, chunk_size)
             .enumerate()
@@ -155,6 +164,7 @@ impl TarItem {
     }
 }
 
+#[cfg(feature = "split_files")]
 #[derive(Debug, Eq, PartialEq)]
 pub struct TarItemChunk<'a> {
     pub tar_item: &'a TarItem,
@@ -162,6 +172,7 @@ pub struct TarItemChunk<'a> {
     pub byte_range: Range<u64>,
 }
 
+#[cfg(feature = "split_files")]
 impl TarItemChunk<'_> {
     pub fn dest_path(&self) -> PathBuf {
         let file_name = self.tar_item.path.file_name().unwrap();

@@ -1,21 +1,27 @@
 use crate::io::image::reader::ImageReader;
 use crate::io::image::writer::ImageWriter;
-use crate::packing::{FileCombiner, RepackPlan, SimpleLayerPacker};
+use crate::packing::{RepackPlan, SimpleLayerPacker};
 use crate::utils::display_bytes;
 use byte_unit::Byte;
 use globset::GlobSet;
 use indicatif::MultiProgress;
 use itertools::Itertools;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
 use tracing::{debug, info};
 use zstd::zstd_safe::CompressionLevel;
+
+#[cfg(feature = "split_files")]
+use crate::packing::FileCombiner;
+#[cfg(feature = "split_files")]
+use std::path::Path;
 
 pub fn repack(
     progress: MultiProgress,
     image: ImageReader,
     output_dir: PathBuf,
     target_size: Byte,
-    split_files: Option<Byte>,
+    #[cfg(feature = "split_files")] split_files: Option<Byte>,
     exclude: Option<GlobSet>,
     compression_level: CompressionLevel,
     skip_compression: bool,
@@ -52,7 +58,10 @@ pub fn repack(
     );
 
     info!("Total items in output: {}", layer_contents.len());
-    info!("Total items removed from output: {}", layer_contents.added_files.count - layer_contents.len() as u64);
+    info!(
+        "Total items removed from output: {}",
+        layer_contents.added_files.count - layer_contents.len() as u64
+    );
     info!(
         "Total raw size: {:#.1}",
         display_bytes(layer_contents.total_size())
@@ -65,12 +74,16 @@ pub fn repack(
     let mut layer_packer = SimpleLayerPacker::new(image_writer, target_size.as_u64());
 
     let mut plan = RepackPlan::new(path_map.len());
+    #[cfg(feature = "split_files")]
     let mut combiner = FileCombiner::new();
+
     info!("Planning repacking");
+
     for item in path_map.values() {
         if item.is_tiny_file() || item.is_symlink() || item.is_dir() {
             plan.add_full_item(tiny_items_layer, item)
         } else {
+            #[cfg(feature = "split_files")]
             if let Some(split_size) = split_files {
                 if item.size > target_size {
                     let key = item.key();
@@ -93,7 +106,12 @@ pub fn repack(
             plan.add_full_item(layer_id, item)
         }
     }
+    #[cfg(feature = "split_files")]
     let mut image_writer = layer_packer.into_inner();
+    #[cfg(not(feature = "split_files"))]
+    let image_writer = layer_packer.into_inner();
+
+    #[cfg(feature = "split_files")]
     let entrypoint_override = if !combiner.is_empty() {
         info!("{} files will be split into chunks", combiner.len());
         let tiny_items_layer_writer = image_writer.get_layer(tiny_items_layer);
@@ -125,7 +143,6 @@ pub fn repack(
         .map(|(_, item)| item)
         .collect_vec();
 
-
     if !keep_temp_files {
         image_writer.remove_temp_files()?;
     }
@@ -134,6 +151,7 @@ pub fn repack(
         &sorted_layers,
         image_config,
         skip_compression,
+        #[cfg(feature = "split_files")]
         entrypoint_override,
     )?;
 

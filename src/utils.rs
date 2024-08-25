@@ -1,8 +1,11 @@
 use byte_unit::{AdjustedByte, Byte, UnitType};
 use indicatif::{MultiProgress, ProgressBar, ProgressFinish, ProgressStyle};
 use std::borrow::Cow;
+
+#[cfg(feature = "split_files")]
 use std::ops::Range;
 
+#[cfg(feature = "split_files")]
 pub fn byte_range_chunks(size: u64, chunk_size: u64) -> impl Iterator<Item = Range<u64>> {
     (0..size)
         .step_by(chunk_size as usize)
@@ -13,7 +16,7 @@ pub fn byte_range_chunks(size: u64, chunk_size: u64) -> impl Iterator<Item = Ran
 }
 
 pub fn display_bytes(size: u64) -> AdjustedByte {
-    Byte::from(size).get_appropriate_unit(UnitType::Decimal)
+    Byte::from(size).get_appropriate_unit(UnitType::Binary)
 }
 
 pub fn create_pbar(

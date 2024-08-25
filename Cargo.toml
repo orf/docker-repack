@@ -32,3 +32,7 @@ memmap2 = "0.9.4"
 [profile.lto]
 inherits = "release"
 lto = true
+
+[features]
+default_features = []
+split_files = []

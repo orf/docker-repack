@@ -27,6 +27,7 @@ impl<'a> FileCombiner<'a> {
         self.chunked_files.len()
     }
 
+    #[cfg(feature = "split_files")]
     pub fn add_chunked_file(&mut self, item: &'a TarItem, chunks: Vec<TarItemChunk<'a>>) {
         self.chunked_files.push((item, chunks))
     }

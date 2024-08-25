@@ -50,10 +50,10 @@ impl<W: Write> HashedWriter<W> {
 
 impl<W: Write> Write for HashedWriter<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let bytes_written = self.writer.write(buf)?;
-        self.hasher.update(&buf[..bytes_written]);
-        self.total_bytes_written += bytes_written;
-        Ok(bytes_written)
+        self.writer.write_all(buf)?;
+        self.hasher.update(buf);
+        self.total_bytes_written += buf.len();
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> io::Result<()> {
