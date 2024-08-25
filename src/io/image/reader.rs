@@ -23,10 +23,7 @@ pub struct ImageReader {
     pub config: ImageConfiguration,
 }
 
-pub fn read_blob<'a, T: for<'de> serde::Deserialize<'de>>(
-    blobs_dir: &Path,
-    digest: &str,
-) -> anyhow::Result<T> {
+pub fn read_blob<'a, T: for<'de> serde::Deserialize<'de>>(blobs_dir: &Path, digest: &str) -> anyhow::Result<T> {
     let hash = digest.split_once(':').unwrap().1;
     let manifest_file = File::open(blobs_dir.join(hash))?;
     Ok(serde_json::from_reader(manifest_file)?)
@@ -89,10 +86,7 @@ impl ImageReader {
             .into_par_iter()
             .map(|layer| {
                 let layer_file_name = layer.path.file_name().ok_or(anyhow!("No path name"))?;
-                let new_path = image_writer
-                    .temp_dir
-                    .join(layer_file_name)
-                    .with_extension("raw");
+                let new_path = image_writer.temp_dir.join(layer_file_name).with_extension("raw");
                 layer.decompress(progress, new_path)
             })
             .collect();

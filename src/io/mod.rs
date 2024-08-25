@@ -7,6 +7,8 @@ pub mod image;
 pub mod layer;
 mod utils;
 
+pub use compression::tracked_encoder::TrackedEncoderWriter;
+
 const DEFAULT_BUFFER_SIZE: usize = 4 * 1024 * 1024;
 
 fn new_bufwriter<T: Write>(item: T) -> BufWriter<T> {

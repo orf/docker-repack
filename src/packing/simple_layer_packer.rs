@@ -1,4 +1,5 @@
 use crate::io::image::writer::{ImageWriter, NewLayerID};
+use crate::packing::LayerPacker;
 use crate::tar_item::{TarItem, TarItemKey};
 use crate::utils::display_bytes;
 use std::collections::HashSet;
@@ -52,24 +53,33 @@ impl<'a> LayerBin<'a> {
 
 pub struct SimpleLayerPacker<'a> {
     image_writer: ImageWriter,
-    layer_bins: Vec<LayerBin<'a>>,
     target_size: u64,
+    layer_bins: Vec<LayerBin<'a>>,
 }
 
-impl<'a> SimpleLayerPacker<'a> {
-    pub fn new(image_writer: ImageWriter, target_size: u64) -> SimpleLayerPacker<'a> {
-        Self {
+impl SimpleLayerPacker<'_> {
+    pub fn new(image_writer: ImageWriter, target_size: u64) -> anyhow::Result<Self> {
+        Ok(Self {
             target_size,
             image_writer,
             layer_bins: Vec::new(),
-        }
+        })
     }
+}
 
-    pub fn into_inner(self) -> ImageWriter {
+impl<'a> LayerPacker<'a> for SimpleLayerPacker<'a> {
+    fn into_inner(self) -> ImageWriter {
         self.image_writer
     }
 
-    pub fn layer_for(
+    fn layer_for_item(&mut self, item: &'a TarItem, _data: &[u8]) -> anyhow::Result<NewLayerID> {
+        let key = item.key();
+        let hash = item.content_hash();
+        let hardlink_target = item.key_for_hardlink();
+        Ok(self.layer_for(key, item.size, hash, hardlink_target))
+    }
+
+    fn layer_for(
         &mut self,
         key: TarItemKey<'a>,
         size: u64,
@@ -105,12 +115,5 @@ impl<'a> SimpleLayerPacker<'a> {
         new_layer_bin.add_item(key, size, hash);
         self.layer_bins.push(new_layer_bin);
         new_layer_id
-    }
-
-    pub fn layer_for_item(&mut self, item: &'a TarItem) -> NewLayerID {
-        let key = item.key();
-        let hash = item.content_hash();
-        let hardlink_target = item.key_for_hardlink();
-        self.layer_for(key, item.size, hash, hardlink_target)
     }
 }

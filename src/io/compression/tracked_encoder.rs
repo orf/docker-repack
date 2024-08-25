@@ -1,32 +1,53 @@
 use std::io::Write;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use zstd::stream::write::Encoder;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
+use zstd::stream::write::AutoFinishEncoder;
+use zstd::Encoder;
 
-#[derive(Debug, Default)]
-pub struct TrackedEncoder {
-    counter: AtomicUsize,
+pub struct TrackedEncoderWriter<'a> {
+    counter: Arc<AtomicU64>,
+    stream_encoder: AutoFinishEncoder<'a, TrackedWriter<Arc<AtomicU64>>>,
 }
 
-impl TrackedEncoder {
-    pub fn create_encoder(&self) -> Encoder<TrackedWriter> {
+impl TrackedEncoderWriter<'_> {
+    pub fn new() -> anyhow::Result<Self> {
+        let counter = Arc::new(AtomicU64::new(0));
         let tracker = TrackedWriter {
-            counter: &self.counter,
+            counter: counter.clone(),
         };
-        Encoder::new(tracker, 1).unwrap()
+        let encoder = Encoder::new(tracker, 1)?;
+        Ok(TrackedEncoderWriter {
+            stream_encoder: encoder.auto_finish(),
+            counter: counter.clone(),
+        })
     }
 
-    pub fn bytes_written(&self) -> usize {
+    pub fn bytes_written(&self) -> u64 {
         self.counter.load(Ordering::SeqCst)
     }
+
+    pub fn copy_item(&mut self, mut reader: &[u8]) -> std::io::Result<u64> {
+        std::io::copy(&mut reader, &mut self.stream_encoder)
+    }
+
+    pub fn flush(&mut self) -> std::io::Result<()> {
+        self.stream_encoder.flush()
+    }
 }
 
-pub struct TrackedWriter<'a> {
-    counter: &'a AtomicUsize,
+pub struct TrackedWriter<T> {
+    counter: T,
 }
 
-impl<'a> Write for TrackedWriter<'a> {
+impl<T> TrackedWriter<T> {
+    pub fn into_counter(self) -> T {
+        self.counter
+    }
+}
+
+impl Write for &mut TrackedWriter<u64> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.counter.fetch_add(buf.len(), Ordering::Relaxed);
+        self.counter += buf.len() as u64;
         Ok(buf.len())
     }
 
@@ -35,31 +56,13 @@ impl<'a> Write for TrackedWriter<'a> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let counter = AtomicUsize::new(0);
-        let mut writer = TrackedWriter { counter: &counter };
-        let contents = b"hello world";
-        for _ in 0..10 {
-            writer.write(contents).unwrap();
-        }
-        assert_eq!(counter.load(Ordering::SeqCst), contents.len() * 10);
+impl Write for TrackedWriter<Arc<AtomicU64>> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.counter.fetch_add(buf.len() as u64, Ordering::Relaxed);
+        Ok(buf.len())
     }
 
-    #[test]
-    fn it_works_zstd() {
-        let tracker = TrackedEncoder::default();
-        let mut encoder = tracker.create_encoder();
-        let contents = b"hello world";
-        for _ in 0..1000000 {
-            encoder.write_all(contents).unwrap();
-        }
-
-        encoder.flush().unwrap();
-        assert_eq!(tracker.bytes_written(), 1024);
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
     }
 }

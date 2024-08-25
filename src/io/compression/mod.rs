@@ -1,9 +1,8 @@
 use anyhow::bail;
 use oci_spec::image::MediaType;
 pub mod read;
-mod tracked_encoder;
+pub mod tracked_encoder;
 pub mod write;
-pub use tracked_encoder::{TrackedEncoder, TrackedWriter};
 
 #[derive(Debug, strum_macros::Display, Copy, Clone)]
 pub enum CompressionType {

@@ -18,6 +18,7 @@ use itertools::Itertools;
 use std::ops::Range;
 
 pub type TarItemKey<'a> = (SourceLayerID, &'a PathBuf);
+pub type TarItemSortKey = String;
 
 #[derive(Debug, Clone, Eq, PartialEq, strum_macros::Display, Ord, PartialOrd)]
 enum FileType {
@@ -41,6 +42,7 @@ pub struct TarItem {
     pub path: PathBuf,
     pub size: u64,
     pub header_position: u64,
+    pub data_position: u64,
     type_: TarItemType,
 }
 
@@ -58,13 +60,11 @@ impl Display for TarItem {
 }
 
 impl TarItem {
-    pub fn from_entry(
-        layer_index: SourceLayerID,
-        mut entry: &mut Entry<impl BufRead + Seek>,
-    ) -> anyhow::Result<Self> {
+    pub fn from_entry(layer_index: SourceLayerID, mut entry: &mut Entry<impl BufRead + Seek>) -> anyhow::Result<Self> {
         let entry_size = entry.size();
         let entry_type = entry.header().entry_type();
         let header_position = entry.raw_header_position();
+        let data_position = entry.raw_file_position();
         let path = entry.path()?.to_path_buf();
         let type_ = match entry_type {
             EntryType::Directory => TarItemType::Directory,
@@ -93,6 +93,7 @@ impl TarItem {
             size: entry_size,
             layer_id: layer_index,
             header_position,
+            data_position,
             path,
             type_,
         })
@@ -107,6 +108,10 @@ impl TarItem {
             TarItemType::HardLink(path) => Some((self.layer_id, path)),
             _ => None,
         }
+    }
+
+    pub fn sort_key(&self) -> TarItemSortKey {
+        self.path.to_str().unwrap().to_string()
     }
 
     #[cfg(feature = "split_files")]

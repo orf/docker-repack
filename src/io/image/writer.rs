@@ -5,8 +5,7 @@ use chrono::Utc;
 use indicatif::MultiProgress;
 use itertools::Itertools;
 use oci_spec::image::{
-    Descriptor, HistoryBuilder, ImageConfiguration, ImageIndexBuilder, ImageManifestBuilder,
-    MediaType,
+    Descriptor, HistoryBuilder, ImageConfiguration, ImageIndexBuilder, ImageManifestBuilder, MediaType,
 };
 use rayon::prelude::*;
 use serde_json::json;
@@ -65,10 +64,7 @@ impl ImageWriter {
         Ok(layer_id)
     }
 
-    pub fn write_blob<T: serde::Serialize>(
-        blobs_dir: &Path,
-        item: T,
-    ) -> anyhow::Result<HashAndSize> {
+    pub fn write_blob<T: serde::Serialize>(blobs_dir: &Path, item: T) -> anyhow::Result<HashAndSize> {
         let mut writer = HashedWriter::new(vec![]);
         serde_json::to_writer_pretty(&mut writer, &item)?;
         let (content, hash_and_size) = writer.into_inner();
@@ -78,8 +74,7 @@ impl ImageWriter {
 
     pub fn finish_writing_layers(&mut self) -> anyhow::Result<Vec<WrittenLayer>> {
         info!("Finishing writing layers");
-        let finished_layers: Result<Vec<_>, _> =
-            self.layers.drain(0..).map(|layer| layer.finish()).collect();
+        let finished_layers: Result<Vec<_>, _> = self.layers.drain(0..).map(|layer| layer.finish()).collect();
         info!("Layers written");
         finished_layers
     }
@@ -144,11 +139,7 @@ impl ImageWriter {
         let root_fs = config.rootfs_mut();
         let diff_ids = root_fs.diff_ids_mut();
         diff_ids.clear();
-        diff_ids.extend(
-            finished_layers
-                .iter()
-                .map(|(layer, _)| layer.hash.prefixed_hash()),
-        );
+        diff_ids.extend(finished_layers.iter().map(|(layer, _)| layer.hash.prefixed_hash()));
         #[cfg(feature = "split_files")]
         if let Some(mut entrypoint_override) = entrypoint_override {
             if let Some(ref img_config) = config.config() {

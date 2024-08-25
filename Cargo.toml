@@ -28,6 +28,7 @@ clap-num = "1.1.1"
 tracing = { version = "0.1.40", features = ["release_max_level_debug"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 memmap2 = "0.9.4"
+strum = "0.26.3"
 
 [profile.lto]
 inherits = "release"

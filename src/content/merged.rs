@@ -78,10 +78,7 @@ impl MergedLayerContent {
                         return;
                     }
                 }
-                panic!(
-                    "Tried to remove non-existent path '{path}' in layer {:?}",
-                    layer_index
-                );
+                panic!("Tried to remove non-existent path '{path}' in layer {:?}", layer_index);
             }
         }
     }

@@ -7,9 +7,7 @@ pub fn decompress_reader(
     reader: impl BufRead + 'static,
 ) -> anyhow::Result<Box<dyn BufRead>> {
     match compression_type {
-        CompressionType::ZStd => Ok(Box::new(BufReader::new(zstd::stream::Decoder::new(
-            reader,
-        )?))),
+        CompressionType::ZStd => Ok(Box::new(BufReader::new(zstd::stream::Decoder::new(reader)?))),
         CompressionType::Gzip => Ok(Box::new(BufReader::new(GzDecoder::new(reader)))),
         CompressionType::None => Ok(Box::new(reader)),
     }

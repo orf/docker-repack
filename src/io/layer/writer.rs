@@ -44,11 +44,7 @@ impl LayerWriter {
         })
     }
 
-    fn write_index(
-        &mut self,
-        byte_range: &Range<u64>,
-        item: &Entry<impl Read>,
-    ) -> anyhow::Result<()> {
+    fn write_index(&mut self, byte_range: &Range<u64>, item: &Entry<impl Read>) -> anyhow::Result<()> {
         writeln!(
             self.index_writer,
             "{:<5} {:?}\t\tsize={:#10.1} path={:<100} link={:?}",
@@ -68,8 +64,7 @@ impl LayerWriter {
             let mut header = Header::new_gnu();
             header.set_entry_type(EntryType::Directory);
             header.set_mode(mode);
-            self.archive_writer
-                .append_data(&mut header, parent, &mut io::empty())?;
+            self.archive_writer.append_data(&mut header, parent, &mut io::empty())?;
         }
         Ok(())
     }
@@ -116,8 +111,7 @@ impl LayerWriter {
             EntryType::Regular | EntryType::Link | EntryType::Symlink | EntryType::Directory => {
                 let mut header = item.header().clone();
                 header.set_size(data.len() as u64);
-                self.archive_writer
-                    .append_data(&mut header, new_path, data)?;
+                self.archive_writer.append_data(&mut header, new_path, data)?;
             }
             type_ => {
                 bail!("Unsupported entry type: {:?}", type_);

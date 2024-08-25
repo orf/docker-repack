@@ -19,13 +19,7 @@ impl ItemOperation {
         let file_name = path.file_name().unwrap();
         let name_bytes = file_name.as_bytes();
         if file_name == ".wh..wh..opq" {
-            let mut prefix = path
-                .parent()
-                .unwrap()
-                .to_path_buf()
-                .to_str()
-                .unwrap()
-                .to_string();
+            let mut prefix = path.parent().unwrap().to_path_buf().to_str().unwrap().to_string();
             prefix.push('/');
             Self::RemovePrefix(prefix)
         } else if name_bytes.starts_with(b".wh.") {
@@ -53,21 +47,17 @@ impl LayerOperations {
     }
 
     pub fn removed_files(&self) -> impl Iterator<Item = (&String, &TarItem)> {
-        self.operations
-            .iter()
-            .filter_map(|(operation, item)| match operation {
-                ItemOperation::RemoveFile(path) => Some((path, item)),
-                _ => None,
-            })
+        self.operations.iter().filter_map(|(operation, item)| match operation {
+            ItemOperation::RemoveFile(path) => Some((path, item)),
+            _ => None,
+        })
     }
 
     pub fn removed_prefixes(&self) -> impl Iterator<Item = (&String, &TarItem)> {
-        self.operations
-            .iter()
-            .filter_map(|(operation, item)| match operation {
-                ItemOperation::RemovePrefix(path) => Some((path, item)),
-                _ => None,
-            })
+        self.operations.iter().filter_map(|(operation, item)| match operation {
+            ItemOperation::RemovePrefix(path) => Some((path, item)),
+            _ => None,
+        })
     }
 
     pub fn added(self) -> impl Iterator<Item = (String, TarItem)> {

@@ -50,23 +50,21 @@ struct Args {
 
     #[arg(long)]
     keep_temp_files: bool,
+    // #[arg(long, default_value_t=RepackType::default())]
+    // repack_type: RepackType,
 }
 
 fn main() -> anyhow::Result<()> {
     let filter = EnvFilter::builder()
         .with_default_directive("docker_repack=info".parse().unwrap())
         .from_env_lossy();
-    tracing_subscriber::registry()
-        .with(fmt::layer())
-        .with(filter)
-        .init();
+    tracing_subscriber::registry().with(fmt::layer()).with(filter).init();
 
     let args = Args::parse();
     let image_dir = args.image_dir;
     info!("Reading image from {:?}", image_dir);
 
-    let image = ImageReader::from_dir(&image_dir)
-        .with_context(|| format!("Error opening image {image_dir:?}"))?;
+    let image = ImageReader::from_dir(&image_dir).with_context(|| format!("Error opening image {image_dir:?}"))?;
     std::fs::create_dir_all(&args.output_dir)?;
 
     let progress = MultiProgress::new();
@@ -83,6 +81,7 @@ fn main() -> anyhow::Result<()> {
         args.compression_level,
         args.skip_compression,
         args.keep_temp_files,
+        // args.repack_type,
     )
 }
 
@@ -94,10 +93,7 @@ fn create_glob_set(exclude: Option<Vec<globset::Glob>>) -> anyhow::Result<Option
             for glob in globs {
                 let mut glob = glob;
                 if glob.glob().starts_with('/') {
-                    warn!(
-                        "Stripping / prefix from glob {} - globs should be relative to /",
-                        glob
-                    );
+                    warn!("Stripping / prefix from glob {} - globs should be relative to /", glob);
                     glob = Glob::new(&glob.glob()[1..])?;
                 }
                 builder.add(glob);

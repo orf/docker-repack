@@ -14,9 +14,7 @@ pub struct FileCombiner<'a> {
 
 impl<'a> FileCombiner<'a> {
     pub fn new() -> Self {
-        Self {
-            chunked_files: vec![],
-        }
+        Self { chunked_files: vec![] }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -32,11 +30,7 @@ impl<'a> FileCombiner<'a> {
         self.chunked_files.push((item, chunks))
     }
 
-    pub fn write_to_image(
-        self,
-        directory: &Path,
-        layer_writer: &mut LayerWriter,
-    ) -> anyhow::Result<Vec<String>> {
+    pub fn write_to_image(self, directory: &Path, layer_writer: &mut LayerWriter) -> anyhow::Result<Vec<String>> {
         let script_path = directory.join("combine.sh");
         layer_writer.new_directory(directory, 0x755)?;
         layer_writer.new_item(
@@ -49,11 +43,7 @@ impl<'a> FileCombiner<'a> {
             0x755,
             self.generate_combining_json_index()?.as_bytes(),
         )?;
-        layer_writer.new_item(
-            &script_path,
-            0x4777,
-            self.generate_combining_script()?.as_bytes(),
-        )?;
+        layer_writer.new_item(&script_path, 0x4777, self.generate_combining_script()?.as_bytes())?;
         Ok(vec![format!("/{}", script_path.display())])
     }
 
