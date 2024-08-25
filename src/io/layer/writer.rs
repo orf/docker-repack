@@ -146,10 +146,9 @@ impl Display for WrittenLayer {
         write!(f, "WrittenLayer: ")?;
         write!(
             f,
-            "raw_size={:#<6.1} entries={:<5} path={}",
+            "raw_size={:#.1} entries={}",
             display_bytes(self.hash.size),
-            self.entries,
-            self.path.display()
+            self.entries
         )
     }
 }

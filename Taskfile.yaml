@@ -28,8 +28,7 @@ tasks:
     requires:
       vars: [ IMAGE ]
     cmds:
-      - mkdir -p oci/original/
-      - mkdir -p oci/original-zstd/
+      - mkdir -p oci/original/ oci/original-zstd/
       - echo {{.IMAGE}}
       - skopeo --override-arch=arm64 --override-os=linux copy docker://{{.IMAGE}} oci:oci/original/{{.IMAGE| replace "/" "-" | replace ":" "-"}} --image-parallel-copies=10
       - skopeo --override-arch=arm64 --override-os=linux copy oci:oci/original/{{.IMAGE| replace "/" "-" | replace ":" "-"}} oci:oci/original-zstd/{{.IMAGE| replace "/" "-" | replace ":" "-"}} --image-parallel-copies=10 --dest-compress --dest-compress-format=zstd --dest-compress-level=9
