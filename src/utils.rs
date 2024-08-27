@@ -4,6 +4,7 @@ use std::borrow::Cow;
 
 #[cfg(feature = "split_files")]
 use std::ops::Range;
+use std::time::Duration;
 
 #[cfg(feature = "split_files")]
 pub fn byte_range_chunks(size: u64, chunk_size: u64) -> impl Iterator<Item = Range<u64>> {
@@ -31,10 +32,12 @@ pub fn create_pbar(
         )
         .unwrap()
     };
-    progress.add(
+    let pbar = progress.add(
         ProgressBar::new(size)
             .with_style(template)
             .with_finish(ProgressFinish::AndClear)
             .with_message(message),
-    )
+    );
+    pbar.enable_steady_tick(Duration::from_millis(500));
+    pbar
 }

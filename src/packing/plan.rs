@@ -96,29 +96,36 @@ impl RepackPlan {
 
         let progress_bar = create_pbar(progress, self.operations.len() as u64, "Repacking", false);
 
+        let seekable_readers: Result<Vec<_>, _> = source_layers.iter().map(|r| r.get_seekable_reader()).collect();
+        let seekable_readers = seekable_readers?;
+
+        let mut total_done = 0;
+        let total = self.operations.len();
+        let ten_percent = self.operations.len() / 10;
+
+        let is_pbar_hidden =  progress.is_hidden();
+
         for (source_layer_id, chunk) in &self
             .operations
             .into_iter()
             .progress_with(progress_bar)
             .chunk_by(|r| r.source)
         {
-            let seekable_reader = source_layers[source_layer_id.0].get_seekable_reader()?;
+            let seekable_reader = &seekable_readers[source_layer_id.0];
             let chunk = chunk.collect_vec();
-            let progress = create_pbar(
-                progress,
-                chunk.len() as u64,
-                format!("Copying files from layer {source_layer_id}"),
-                false,
-            );
 
-            let mut item_count = 0;
-
-            for (new_layer_id, chunk) in &chunk.into_iter().progress_with(progress).chunk_by(|r| r.dest) {
+            for (new_layer_id, chunk) in &chunk.into_iter().chunk_by(|r| r.dest) {
                 let new_layer_writer = image_writer.get_layer(new_layer_id);
                 for operation in chunk {
-                    item_count += 1;
                     trace!("path={} sort_key={:?}", operation.item_offset, operation.sort_key);
                     let mut item_archive = seekable_reader.open_position(operation.item_offset as usize);
+
+                    total_done += 1;
+
+                    if is_pbar_hidden && (total_done % ten_percent) == 0 {
+                        info!("Written {total_done}/{total}");
+                    }
+
                     match operation.type_ {
                         RepackOperationType::WriteWholeItem => {
                             let item = item_archive.read_entry()?;
@@ -138,7 +145,6 @@ impl RepackPlan {
                     }
                 }
             }
-            info!("Finished processing source layer {source_layer_id} - {item_count} items copied");
         }
         info!("Plan executed");
         Ok(image_writer)

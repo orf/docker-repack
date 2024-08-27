@@ -39,7 +39,7 @@ impl<'a> CompressedLayerPacker<'a> {
     fn set_new_encoder(&mut self) -> anyhow::Result<()> {
         self.encoder.flush()?;
         info!(
-            "Finished layer {} - written={:#.1}",
+            "Finished planning layer {} - size={:#.1}",
             self.layer_id,
             crate::utils::display_bytes(self.encoder.bytes_written())
         );
