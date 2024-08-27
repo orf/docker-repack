@@ -70,18 +70,18 @@ jobs:
       - name: Download image
         if: steps.cache-image.outputs.cache-hit != 'true'
         run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci:image --dest-compress --dest-compress-format=zstd --dest-compress-level=1
-#
-#      - name: Repack image
-#        run: docker-repack image/ repacked/ --target-size=${{ env.TARGET_SIZE }}
-#
-#      - name: "Skopeo authenticate"
-#        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
-#
-#      - name: Copy original zstd
-#        run: skopeo copy oci:image/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:original-gzip-nvidia-cuda-12.5.1"
-#
-#      - name: Copy original gzip
-#        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:original-gzip-nvidia-cuda-12.5.1"
-#
-#      - name: Copy repacked
-#        run: skopeo copy oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:repacked-nvidia-cuda-12.5.1"
+
+      - name: Repack image
+        run: docker-repack image/ repacked/ --target-size=${{ env.TARGET_SIZE }}
+
+      - name: "Skopeo authenticate"
+        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+
+      - name: Copy original zstd
+        run: skopeo copy oci:image/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:original-gzip-nvidia-cuda-12.5.1"
+
+      - name: Copy original gzip
+        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:original-gzip-nvidia-cuda-12.5.1"
+
+      - name: Copy repacked
+        run: skopeo copy oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:repacked-nvidia-cuda-12.5.1"
