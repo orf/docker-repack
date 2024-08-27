@@ -2,61 +2,29 @@ name: containerd
 
 on:
   push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   pull-image:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: 'Set up skopeo'
+        uses: warjiang/setup-skopeo@v0.1.3
         with:
-          repository: 'containers/skopeo'
-
-      - uses: actions/setup-go@v5
-        with:
-          cache: 'true'
-          go-version: '^1.22.0'
-
-      - name: install hyperfine
-        uses: jaxxstorm/action-install-gh-release@v1
-        with:
-          repo: sharkdp/hyperfine
-          # https://github.com/jaxxstorm/action-install-gh-release/issues/88
-          tag: v1.18.0
-          binaries-location: hyperfine-v1.18.0-x86_64-unknown-linux-gnu
-          cache: enable
-
-      - uses: awalsh128/cache-apt-pkgs-action@v1
-        with:
-          packages: libgpgme-dev libassuan-dev libbtrfs-dev pkg-config
-          version: 1
-
-      - run: DISABLE_DOCS=1 make bin/skopeo
+          version: latest
 
       - run: ./bin/skopeo --version
 
-      - name: benchmark
-        run: hyperfine --runs 1
-              --parameter-list image $(echo "${images}" | tr '\n' ',' | sed 's/.$//')
-              './bin/skopeo copy --quiet --image-parallel-copies=25 --all docker://docker.io/{image} dir:saved-image'
-              --cleanup 'rm -rf saved-image'
-        env:
-          images: |-
-            orfal/split:original-python-3.11
-            orfal/split:repacked-python-3.11
-            orfal/split:original-tensorflow-tensorflow-2.17.0-gpu
-            orfal/split:repacked-tensorflow-tensorflow-2.17.0-gpu
-            orfal/split:original-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
-            orfal/split:repacked-nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04
-
-#            orfal/split:original-angelborroy-llama2-1.0.0
-#            orfal/split:repacked-angelborroy-llama2-1.0.0
-
-  diagram:
-    permissions:
-      actions: read
-    runs-on: ubuntu-latest
-    needs: [ pull-image ]
-    steps:
-      - uses: Kesin11/actions-timeline@v2
-        with:
-          show-waiting-runner: 'false'
+      - name: "Skopeo authenticate"
+        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
