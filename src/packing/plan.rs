@@ -21,17 +21,17 @@ pub enum RepackOperationType {
 }
 
 #[derive(Debug)]
-pub struct RepackOperation {
+pub struct RepackOperation<'a> {
     source: SourceLayerID,
     item_offset: u64,
 
     dest: NewLayerID,
-    sort_key: TarItemSortKey,
+    sort_key: TarItemSortKey<'a>,
     type_: RepackOperationType,
 }
 
-impl RepackOperation {
-    pub fn new_whole_item(item: &TarItem, dest: NewLayerID) -> Self {
+impl<'a> RepackOperation<'a> {
+    pub fn new_whole_item(item: &'a TarItem, dest: NewLayerID) -> Self {
         RepackOperation {
             source: item.layer_id,
             item_offset: item.header_position,
@@ -54,17 +54,17 @@ impl RepackOperation {
 }
 
 #[derive(Debug)]
-pub struct RepackPlan {
-    operations: Vec<RepackOperation>,
+pub struct RepackPlan<'a> {
+    operations: Vec<RepackOperation<'a>>,
 }
 
-impl RepackPlan {
+impl<'a> RepackPlan<'a> {
     pub fn new(capacity: usize) -> Self {
         Self {
             operations: Vec::with_capacity(capacity),
         }
     }
-    pub fn add_full_item(&mut self, dest: NewLayerID, item: &TarItem) {
+    pub fn add_full_item(&mut self, dest: NewLayerID, item: &'a TarItem) {
         self.operations.push(RepackOperation::new_whole_item(item, dest));
     }
 

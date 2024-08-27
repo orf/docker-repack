@@ -18,7 +18,7 @@ use itertools::Itertools;
 use std::ops::Range;
 
 pub type TarItemKey<'a> = (SourceLayerID, &'a PathBuf);
-pub type TarItemSortKey = TarItemType;
+pub type TarItemSortKey<'a> = (String, Option<TarItemKey<'a>>);
 
 #[derive(Debug, Clone, Eq, PartialEq, strum_macros::Display, Ord, PartialOrd)]
 pub enum FileType {
@@ -111,7 +111,10 @@ impl TarItem {
     }
 
     pub fn sort_key(&self) -> TarItemSortKey {
-        self.type_.clone()
+        (
+            self.path.to_str().unwrap().to_string(),
+            self.key_for_hardlink()
+        )
     }
 
     #[cfg(feature = "split_files")]
