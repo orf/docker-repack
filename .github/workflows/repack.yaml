@@ -28,15 +28,18 @@ jobs:
         shell: bash
         run: |
           echo "Storage before:"
+          sudo mkdir empty/
           sudo df -h
-          sudo rm -rf /usr/share/dotnet &
-          sudo rm -rf /usr/local/lib/android &
-          sudo rm -rf /opt/ghc &
-          sudo rm -rf /opt/hostedtoolcache/CodeQL &
-          sudo docker image prune --all --force &
+          sudo rsync -a --delete empty/ /usr/share/dotnet &
+          sudo rsync -a --delete empty/ /usr/local/lib/android &
+          sudo rsync -a --delete empty/ /opt/ghc &
+          sudo rsync -a --delete empty/ /opt/hostedtoolcache/CodeQL &
+          sudo rsync -a --delete empty/ /usr/share/dotnet &
+          sudo docker image prune --all --force > /dev/null &
           wait
           echo "Storage now:"
           sudo df -h
+          sudo rmdir empty/
 
       - uses: actions/checkout@v4
 
