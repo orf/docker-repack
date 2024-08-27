@@ -25,10 +25,12 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.5
 
       - name: Build
-        run: cargo build --release
+        run: cargo install --profile=release --path=.
         env:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"
+      - name: Clean
+        run: cargo clean
 
       - name: install skopeo
         uses: jaxxstorm/action-install-gh-release@v1
@@ -38,10 +40,8 @@ jobs:
           cache: enable
           extension-matching: "disable"
 
-      - run: skopeo --version
-#
-#      - name: Download image
-#        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci://image/
+      - name: Download image
+        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci://image/
 #
 #
 #
