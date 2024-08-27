@@ -24,27 +24,25 @@ jobs:
       id-token: write
 
     steps:
+      - name: Disk space before
+        run: df -h
       - name: Maximize build space
         shell: bash
         run: |
-          echo "Storage before:"
-          sudo mkdir empty/
-          sudo df -h
-          sudo rsync -a --delete empty/ /usr/share/dotnet &
-          sudo rsync -a --delete empty/ /usr/local/lib/android &
-          sudo rsync -a --delete empty/ /opt/ghc &
-          sudo rsync -a --delete empty/ /opt/hostedtoolcache/CodeQL &
+          sudo rm -rf /usr/share/dotnet &
+          sudo rm -rf /usr/local/lib/android &
+          sudo rm -rf /opt/ghc &
+          sudo rm -rf /opt/hostedtoolcache/CodeQL &
           sudo docker image prune --all --force > /dev/null &
           wait
-          echo "Storage now:"
-          sudo df -h
-          sudo rmdir empty/
-
+      - name: Disk space after
+        run: df -h
       - uses: actions/checkout@v4
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           cache-on-failure: 'false'
+
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.5
 
