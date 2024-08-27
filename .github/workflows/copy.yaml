@@ -11,6 +11,7 @@ env:
 
 concurrency:
   group: "copy"
+  cancel-in-progress: true
 
 jobs:
   pull-image:
