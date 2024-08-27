@@ -31,3 +31,6 @@ jobs:
 
       - name: "Skopeo authenticate"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+
+      - name: Copy original
+        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nvidia-cuda-12.5.1-original"
