@@ -34,9 +34,6 @@ jobs:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"
 
-      - name: Clean
-        run: cargo clean
-
       - name: install skopeo
         uses: jaxxstorm/action-install-gh-release@v1
         with:
