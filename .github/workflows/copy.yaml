@@ -27,7 +27,7 @@ jobs:
           cache: enable
           extension-matching: "disable"
 
-      - run: ./bin/skopeo --version
+      - run: skopeo --version
 
       - name: "Skopeo authenticate"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
