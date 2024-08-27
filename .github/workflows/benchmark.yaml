@@ -19,10 +19,12 @@ jobs:
       id-token: write
 
     steps:
-      - name: 'Set up skopeo'
-        uses: warjiang/setup-skopeo@v0.1.3
+      - name: install skopeo
+        uses: jaxxstorm/action-install-gh-release@v1
         with:
-          version: latest
+          repo: lework/skopeo-binary
+          tag: v1.16.1
+          cache: enable
 
       - run: ./bin/skopeo --version
 
