@@ -27,7 +27,7 @@ jobs:
       - name: Maximize build space
         shell: bash
         run: |
-          Echo "Storage before:"
+          echo "Storage before:"
           sudo df -h
           sudo rm -rf /usr/share/dotnet &
           sudo rm -rf /usr/local/lib/android &
@@ -35,7 +35,7 @@ jobs:
           sudo rm -rf /opt/hostedtoolcache/CodeQL &
           sudo docker image prune --all --force &
           wait
-          Echo "Storage now:"
+          echo "Storage now:"
           sudo df -h
 
       - uses: actions/checkout@v4
@@ -68,7 +68,7 @@ jobs:
       - name: Download image
         if: steps.cache-image.outputs.cache-hit != 'true'
         run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci:image --dest-compress --dest-compress-format=zstd --dest-compress-level=1
-
+#
 #      - name: Repack image
 #        run: docker-repack image/ repacked/ --target-size=${{ env.TARGET_SIZE }}
 #
