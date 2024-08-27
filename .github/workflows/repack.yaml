@@ -69,7 +69,7 @@ jobs:
 
       - name: Download image
         if: steps.cache-image.outputs.cache-hit != 'true'
-        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci:image --dest-compress --dest-compress-format=zstd --dest-compress-level=1
+        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci:image
 
       - name: Repack image
         run: docker-repack image/ repacked/ --target-size=${{ env.TARGET_SIZE }}
