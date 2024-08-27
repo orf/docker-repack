@@ -19,6 +19,17 @@ jobs:
       id-token: write
 
     steps:
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@v4
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Build
+        run: cargo build --release
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: "sccache"
+
       - name: install skopeo
         uses: jaxxstorm/action-install-gh-release@v1
         with:
@@ -28,9 +39,14 @@ jobs:
           extension-matching: "disable"
 
       - run: skopeo --version
-
-      - name: "Skopeo authenticate"
-        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
-
-      - name: Copy original
-        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nvidia-cuda-12.5.1-original"
+#
+#      - name: Download image
+#        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci://image/
+#
+#
+#
+#      - name: "Skopeo authenticate"
+#        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+#
+#      - name: Copy original
+#        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nvidia-cuda-12.5.1-original"
