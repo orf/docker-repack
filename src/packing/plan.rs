@@ -96,7 +96,7 @@ impl<'a> RepackPlan<'a> {
 
         let progress_bar = create_pbar(progress, self.operations.len() as u64, "Repacking", false);
 
-        let seekable_readers: Result<Vec<_>, _> = source_layers.iter().map(|r| r.get_seekable_reader()).collect();
+        let seekable_readers: Result<Vec<_>, _> = source_layers.iter().map(|r| r.get_seekable_reader(true)).collect();
         let seekable_readers = seekable_readers?;
 
         let mut total_done = 0;

@@ -67,9 +67,9 @@ impl DecompressedLayer {
         Ok(io::Cursor::new(new_mmap(file, true)?))
     }
 
-    pub fn get_raw_mmap(&self) -> anyhow::Result<Mmap> {
+    pub fn get_raw_mmap(&self, sequential: bool) -> anyhow::Result<Mmap> {
         let file = File::open(&self.path)?;
-        new_mmap(file, false)
+        new_mmap(file, sequential)
     }
 
     pub fn get_progress_reader(
@@ -82,9 +82,9 @@ impl DecompressedLayer {
         Ok(reader)
     }
 
-    pub fn get_seekable_reader(&self) -> anyhow::Result<SeekableLayerReader> {
+    pub fn get_seekable_reader(&self, sequential: bool) -> anyhow::Result<SeekableLayerReader> {
         Ok(SeekableLayerReader {
-            mmap: self.get_raw_mmap()?,
+            mmap: self.get_raw_mmap(sequential)?,
         })
     }
 }

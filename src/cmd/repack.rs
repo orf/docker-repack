@@ -54,7 +54,7 @@ pub fn repack(
         .collect_vec();
 
     let decompressed_layer_readers: anyhow::Result<Vec<_>> =
-        decompressed_layers.iter().map(|l| l.get_seekable_reader()).collect();
+        decompressed_layers.iter().map(|l| l.get_seekable_reader(false)).collect();
     let decompressed_layer_readers = decompressed_layer_readers?;
 
     let mut plan = RepackPlan::new(path_map.len());
