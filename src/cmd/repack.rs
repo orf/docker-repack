@@ -9,7 +9,7 @@ use indicatif::{MultiProgress, ProgressIterator};
 use itertools::Itertools;
 use std::path::PathBuf;
 
-use tracing::{debug, info};
+use tracing::info;
 use zstd::zstd_safe::CompressionLevel;
 
 use crate::content::merged::MergedLayerContent;
@@ -143,7 +143,7 @@ pub fn repack(
     info!("Total image layers: {}", sorted_layers.len());
 
     for (layer, hash_and_size) in sorted_layers {
-        debug!(
+        info!(
             "{layer} - compressed: {} / Size: {:#.1}",
             hash_and_size.raw_hash(),
             display_bytes(hash_and_size.size)

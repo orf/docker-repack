@@ -38,6 +38,6 @@ pub fn create_pbar(
             .with_finish(ProgressFinish::AndClear)
             .with_message(message),
     );
-    pbar.enable_steady_tick(Duration::from_millis(500));
+    pbar.enable_steady_tick(Duration::from_millis(100));
     pbar
 }

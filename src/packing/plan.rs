@@ -103,7 +103,7 @@ impl RepackPlan {
         let total = self.operations.len();
         let ten_percent = self.operations.len() / 10;
 
-        let is_pbar_hidden =  progress.is_hidden();
+        let is_pbar_hidden = progress.is_hidden();
 
         for (source_layer_id, chunk) in &self
             .operations

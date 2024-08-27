@@ -4,7 +4,7 @@ use crate::packing::LayerPacker;
 use crate::tar_item::{TarItem, TarItemKey};
 use anyhow::bail;
 use std::collections::HashMap;
-use tracing::info;
+use tracing::debug;
 
 pub struct CompressedLayerPacker<'a> {
     image_writer: ImageWriter,
@@ -38,7 +38,7 @@ impl<'a> CompressedLayerPacker<'a> {
 
     fn set_new_encoder(&mut self) -> anyhow::Result<()> {
         self.encoder.flush()?;
-        info!(
+        debug!(
             "Finished planning layer {} - size={:#.1}",
             self.layer_id,
             crate::utils::display_bytes(self.encoder.bytes_written())
