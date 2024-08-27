@@ -8,7 +8,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/demo
-  TARGET_SIZE: "150MB"
+  TARGET_SIZE: "100MB"
 
 concurrency:
   group: "repack"
