@@ -48,9 +48,11 @@ jobs:
       - name: Repack image
         run: docker-repack image/ repacked/ --target-size=100MB
 
-#
-#      - name: "Skopeo authenticate"
-#        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
-#
-#      - name: Copy original
-#        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nvidia-cuda-12.5.1-original"
+      - name: "Skopeo authenticate"
+        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+
+      - name: Copy original
+        run: skopeo copy oci:image/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:repacked-nvidia-cuda-12.5.1"
+
+      - name: Copy repacked
+        run: skopeo copy oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:repacked-nvidia-cuda-12.5.1"
