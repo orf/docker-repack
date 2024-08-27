@@ -62,43 +62,23 @@ tasks:
     requires:
       vars: [ IMAGE ]
     cmds:
-      - skopeo copy oci:oci/original/{{.IMAGE}}/ docker://orfal/repack:original-gzip-{{.IMAGE}} --image-parallel-copies=10
-      - skopeo copy oci:oci/original-zstd/{{.IMAGE}}/ docker://orfal/repack:original-zstd-{{.IMAGE}} --image-parallel-copies=10
+      - skopeo copy oci:oci/original/{{.IMAGE}}/ docker://orfal/docker-repack:{{.IMAGE}}-original-gzip --image-parallel-copies=10
+      - skopeo copy oci:oci/original-zstd/{{.IMAGE}}/ docker://orfal/docker-repack:{{.IMAGE}}-original-zstd --image-parallel-copies=10
       - for: { var: SIZES }
-        cmd: skopeo copy oci:oci/repacked/{{.IMAGE}}/{{.ITEM}}/ docker://orfal/repack:repacked-{{.ITEM}}-{{.IMAGE}} --image-parallel-copies=10
+        cmd: skopeo copy oci:oci/repacked/{{.IMAGE}}/{{.ITEM}}/ docker://orfal/docker-repack:{{.IMAGE}}-repacked-{{.ITEM}} --image-parallel-copies=10
 
+  print-images:
+    cmds:
+      - for: { var: IMAGES }
+        task: print-image
+        vars:
+          IMAGE: '{{.ITEM| replace "/" "-" | replace ":" "-"}}'
 
-#  test:
-#    interactive: true
-#    vars:
-##      image: 'nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04'
-#      image: 'python:3.11'
-#    cmds:
-#      - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
-#      - cargo run --profile=release -- oci/{{.image | replace ":" "/" }}/ repack --compression-level=19 --target-size=500MB --exclude='*.pyc' {{.CLI_ARGS}}
-##      - skopeo copy --override-arch=arm64 --override-os=linux oci:oci/{{.image | replace ":" "/" }}/image_new/ docker-daemon:foo:abc
-#
-#  run-and-export:
-#    requires:
-#      vars: [ image ]
-#    vars:
-#      compression_level: 19
-#      image_path: 'oci/{{.image | replace ":" "/" }}'
-#      image_slug: '{{.image | replace ":" "-" | replace "/" "-" }}'
-#      tmp_dir:
-#        sh: mktemp -d
-#    interactive: true
-#    cmds:
-#      - rm -rf oci/{{.image | replace ":" "/" }}/image_new/
-#      - cargo run --profile=lto -- oci/{{.image | replace ":" "/" }}/ repack --target-size=300MB --compression-level={{.compression_level}}
-#      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:repacked-{{.image_slug}}
-#      - cargo run --profile=lto -- oci/{{.image | replace ":" "/" }}/ repack --target-size=300MB --compression-level={{.compression_level}} --split-files=100MB
-#      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image_new/ docker://orfal/split:split-{{.image_slug}}
-#      - skopeo copy --override-arch=arm64 --override-os=linux oci:{{.image_path }}/image/ docker://orfal/split:original-{{.image_slug}}
-#
-#  test-all:
-#    cmds:
-#      - for: { var: IMAGES }
-#        task: run-and-export
-#        vars:
-#          image: '{{.ITEM}}'
+  print-image:
+    requires:
+      vars: [ IMAGE ]
+    cmds:
+      - echo orfal/docker-repack:{{.IMAGE}}-original-gzip
+      - echo orfal/docker-repack:{{.IMAGE}}-original-zstd
+      - for: { var: SIZES }
+        cmd: echo orfal/docker-repack:{{.IMAGE}}-repacked-{{.ITEM}}
