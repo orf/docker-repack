@@ -1,4 +1,4 @@
-name: Copy image
+name: Repack image
 
 on:
   push:
@@ -10,11 +10,11 @@ env:
   IMAGE_NAME: ${{ github.repository }}/demo
 
 concurrency:
-  group: "copy"
+  group: "repack"
   cancel-in-progress: true
 
 jobs:
-  pull-image:
+  repack-image:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,7 +29,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.5
 
       - name: Build
-        run: cargo install --profile=release --path=. --locked
+        run: cargo install --profile=lto --path=. --locked
         env:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"

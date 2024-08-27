@@ -32,7 +32,7 @@ strum = "0.26.3"
 
 [profile.lto]
 inherits = "release"
-lto = true
+lto = "thin"
 
 [features]
 default_features = []
