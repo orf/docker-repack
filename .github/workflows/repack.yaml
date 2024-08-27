@@ -24,6 +24,15 @@ jobs:
       id-token: write
 
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
       - uses: actions/checkout@v4
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -44,8 +53,16 @@ jobs:
           cache: enable
           extension-matching: "disable"
 
+      - name: Cache Image
+        id: cache-image
+        uses: actions/cache@v4
+        with:
+          path: image/
+          key: nvidia-cuda-image
+
       - name: Download image
-        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci:image --dest-compress --dest-compress-format=zstd --dest-compress-level=9
+        if: steps.cache-image.outputs.cache-hit != 'true'
+        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci:image --dest-compress --dest-compress-format=zstd --dest-compress-level=3
 
       - name: Repack image
         run: docker-repack image/ repacked/ --target-size=${{ env.TARGET_SIZE }}
