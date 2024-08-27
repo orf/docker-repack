@@ -44,9 +44,11 @@ jobs:
           extension-matching: "disable"
 
       - name: Download image
-        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci://image/
-#
-#
+        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci://image
+
+      - name: Repack image
+        run: docker-repack image/ repacked/ --target-size=100MB --compression-level=
+
 #
 #      - name: "Skopeo authenticate"
 #        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}

@@ -35,7 +35,7 @@ struct Args {
     #[arg(short, long)]
     target_size: Byte,
 
-    #[arg(short, long, value_parser = parse_compression_level, default_value = "7")]
+    #[arg(short, long, value_parser = parse_compression_level, default_value = "9")]
     compression_level: CompressionLevel,
 
     #[arg(short, long)]
