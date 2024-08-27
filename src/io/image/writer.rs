@@ -103,6 +103,7 @@ impl ImageWriter {
         progress: &MultiProgress,
         finished_layers: Vec<WrittenLayer>,
         compression_level: CompressionLevel,
+        keep_temp_files: bool,
     ) -> anyhow::Result<Vec<(WrittenLayer, HashAndSize)>> {
         info!(
             "Compressing {} layers with level {}",
@@ -122,11 +123,16 @@ impl ImageWriter {
                 )?;
                 let path_with_hash = self.blobs_dir.join(hash_and_size.raw_hash());
                 std::fs::rename(output_path, path_with_hash)?;
-                Ok((layer, hash_and_size))
+                if !keep_temp_files {
+                    std::fs::remove_file(&layer.path)?
+                }
+                info!("Compressed layer {}", layer.id);
+                Ok::<_, anyhow::Error>((layer, hash_and_size))
             })
             .collect();
+        let compressed_layers = compressed_layers?;
         info!("Layers compressed");
-        compressed_layers
+        Ok(compressed_layers)
     }
 
     pub fn write_index(

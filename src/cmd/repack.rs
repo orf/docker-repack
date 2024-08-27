@@ -114,7 +114,7 @@ pub fn repack(
     let finished_layers = image_writer.finish_writing_layers()?;
 
     let final_layers = if !skip_compression {
-        image_writer.write_compressed_layers(&progress, finished_layers, compression_level)?
+        image_writer.write_compressed_layers(&progress, finished_layers, compression_level, keep_temp_files)?
     } else {
         image_writer.write_uncompressed_layers(finished_layers)?
     };
@@ -171,6 +171,14 @@ fn print_layer_contents_stats(layer_contents: &MergedLayerContent) {
     );
 
     info!("Total items in output: {}", layer_contents.len());
+    let non_empty_files_count = layer_contents.non_empty_files().count();
+    let unique_non_empty_files_count = layer_contents.unique_non_empty_files_count();
+    info!("Non-empty file count: {}", non_empty_files_count);
+    info!("Unique non-empty file count: {}", unique_non_empty_files_count);
+    info!(
+        "Duplicate files: {}",
+        non_empty_files_count - unique_non_empty_files_count
+    );
     info!(
         "Total items removed from output: {}",
         layer_contents.added_files.count - layer_contents.len() as u64

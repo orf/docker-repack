@@ -111,9 +111,12 @@ impl RepackPlan {
                 false,
             );
 
+            let mut item_count = 0;
+
             for (new_layer_id, chunk) in &chunk.into_iter().progress_with(progress).chunk_by(|r| r.dest) {
                 let new_layer_writer = image_writer.get_layer(new_layer_id);
                 for operation in chunk {
+                    item_count += 1;
                     trace!("path={} sort_key={:?}", operation.item_offset, operation.sort_key);
                     let mut item_archive = seekable_reader.open_position(operation.item_offset as usize);
                     match operation.type_ {
@@ -135,6 +138,7 @@ impl RepackPlan {
                     }
                 }
             }
+            info!("Finished processing source layer {source_layer_id} - {item_count} items copied");
         }
         info!("Plan executed");
         Ok(image_writer)

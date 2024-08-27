@@ -12,6 +12,7 @@ pub struct CompressedLayerPacker<'a> {
     layer_id: NewLayerID,
     encoder: TrackedEncoderWriter<'a>,
     item_map: HashMap<TarItemKey<'a>, NewLayerID>,
+    item_content_map: HashMap<[u8; 32], NewLayerID>,
 }
 
 impl<'a> CompressedLayerPacker<'a> {
@@ -23,6 +24,7 @@ impl<'a> CompressedLayerPacker<'a> {
             layer_id,
             encoder: TrackedEncoderWriter::new()?,
             item_map: Default::default(),
+            item_content_map: Default::default(),
         })
     }
 
@@ -69,7 +71,7 @@ impl<'a> LayerPacker<'a> for CompressedLayerPacker<'a> {
         key: TarItemKey<'a>,
         _size: u64,
         data: &[u8],
-        _hash: Option<[u8; 32]>,
+        hash: Option<[u8; 32]>,
         hardlink: Option<TarItemKey>,
     ) -> anyhow::Result<NewLayerID> {
         if let Some(hardlink) = hardlink {
@@ -78,6 +80,12 @@ impl<'a> LayerPacker<'a> for CompressedLayerPacker<'a> {
                 None => {
                     bail!("Hardlink target {hardlink:?} not found for {key:?}");
                 }
+            }
+        }
+
+        if let Some(hash) = hash {
+            if let Some(layer_id) = self.item_content_map.get(&hash) {
+                return Ok(*layer_id);
             }
         }
 

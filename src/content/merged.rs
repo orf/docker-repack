@@ -2,6 +2,7 @@ use crate::content::operations::LayerOperations;
 use crate::io::image::reader::SourceLayerID;
 use crate::tar_item::TarItem;
 use globset::GlobSet;
+use itertools::Itertools;
 use std::collections::BTreeMap;
 use std::ops::Bound::{Excluded, Unbounded};
 use trie_rs::iter::KeysExt;
@@ -100,6 +101,14 @@ impl MergedLayerContent {
 
     pub fn len(&self) -> usize {
         self.present_paths.len()
+    }
+
+    pub fn non_empty_files(&self) -> impl Iterator<Item = &TarItem> {
+        self.present_paths.values().filter(|p| p.is_file() && p.size > 0)
+    }
+
+    pub fn unique_non_empty_files_count(&self) -> usize {
+        self.non_empty_files().filter_map(|p| p.content_hash()).unique().count()
     }
 
     pub fn total_size(&self) -> u64 {
