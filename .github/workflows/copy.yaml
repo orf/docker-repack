@@ -1,4 +1,4 @@
-name: containerd
+name: Copy image
 
 on:
   push:
@@ -25,6 +25,7 @@ jobs:
           repo: lework/skopeo-binary
           tag: v1.16.1
           cache: enable
+          extension-matching: "disable"
 
       - run: ./bin/skopeo --version
 
