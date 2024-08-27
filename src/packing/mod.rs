@@ -31,7 +31,8 @@ pub trait LayerPacker<'a> {
         &mut self,
         key: TarItemKey<'a>,
         size: u64,
+        data: &[u8],
         hash: Option<[u8; 32]>,
         hardlink: Option<TarItemKey>,
-    ) -> NewLayerID;
+    ) -> anyhow::Result<NewLayerID>;
 }

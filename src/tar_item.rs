@@ -18,10 +18,10 @@ use itertools::Itertools;
 use std::ops::Range;
 
 pub type TarItemKey<'a> = (SourceLayerID, &'a PathBuf);
-pub type TarItemSortKey = String;
+pub type TarItemSortKey = TarItemType;
 
 #[derive(Debug, Clone, Eq, PartialEq, strum_macros::Display, Ord, PartialOrd)]
-enum FileType {
+pub enum FileType {
     Empty,
     NotEmpty([u8; 32]),
 }
@@ -29,11 +29,11 @@ enum FileType {
 // The ordering of this enum is important, as it is used to sort TarItem.
 // Files must come before HardLinks, as the hardlink target must be present.
 #[derive(Debug, Clone, Eq, PartialEq, strum_macros::Display, Ord, PartialOrd)]
-enum TarItemType {
+pub enum TarItemType {
+    Directory,
+    Symlink(PathBuf),
     File(FileType),
     HardLink(PathBuf),
-    Symlink(PathBuf),
-    Directory,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -111,7 +111,7 @@ impl TarItem {
     }
 
     pub fn sort_key(&self) -> TarItemSortKey {
-        self.path.to_str().unwrap().to_string()
+        self.type_.clone()
     }
 
     #[cfg(feature = "split_files")]

@@ -2,6 +2,8 @@ use crate::io::image::writer::{ImageWriter, NewLayerID};
 use crate::io::TrackedEncoderWriter;
 use crate::packing::LayerPacker;
 use crate::tar_item::{TarItem, TarItemKey};
+use anyhow::bail;
+use std::collections::HashMap;
 use tracing::info;
 
 pub struct CompressedLayerPacker<'a> {
@@ -9,6 +11,7 @@ pub struct CompressedLayerPacker<'a> {
     target_size: u64,
     layer_id: NewLayerID,
     encoder: TrackedEncoderWriter<'a>,
+    item_map: HashMap<TarItemKey<'a>, NewLayerID>,
 }
 
 impl<'a> CompressedLayerPacker<'a> {
@@ -19,6 +22,7 @@ impl<'a> CompressedLayerPacker<'a> {
             target_size,
             layer_id,
             encoder: TrackedEncoderWriter::new()?,
+            item_map: Default::default(),
         })
     }
 
@@ -49,7 +53,34 @@ impl<'a> LayerPacker<'a> for CompressedLayerPacker<'a> {
         self.image_writer
     }
 
-    fn layer_for_item(&mut self, _item: &'a TarItem, data: &[u8]) -> anyhow::Result<NewLayerID> {
+    fn layer_for_item(&mut self, item: &'a TarItem, data: &[u8]) -> anyhow::Result<NewLayerID> {
+        let key = item.key();
+        let hardlink_key = item.key_for_hardlink();
+
+        let layer_id = self.layer_for(key, item.size, data, item.content_hash(), hardlink_key)?;
+
+        self.item_map.insert(key, layer_id);
+
+        Ok(layer_id)
+    }
+
+    fn layer_for(
+        &mut self,
+        key: TarItemKey<'a>,
+        _size: u64,
+        data: &[u8],
+        _hash: Option<[u8; 32]>,
+        hardlink: Option<TarItemKey>,
+    ) -> anyhow::Result<NewLayerID> {
+        if let Some(hardlink) = hardlink {
+            match self.item_map.get(&hardlink) {
+                Some(layer_id) => return Ok(*layer_id),
+                None => {
+                    bail!("Hardlink target {hardlink:?} not found for {key:?}");
+                }
+            }
+        }
+
         let current_layer_id = self.layer_id;
 
         self.encoder.copy_item(data)?;
@@ -61,18 +92,5 @@ impl<'a> LayerPacker<'a> for CompressedLayerPacker<'a> {
         self.set_new_encoder()?;
 
         Ok(current_layer_id)
-    }
-
-    fn layer_for(
-        &mut self,
-        _key: TarItemKey<'a>,
-        _size: u64,
-        _hash: Option<[u8; 32]>,
-        _hardlink: Option<TarItemKey>,
-    ) -> NewLayerID {
-        #[cfg(feature = "split_files")]
-        todo!();
-        #[cfg(not(feature = "split_files"))]
-        unimplemented!("Not implemented for non-split files builds");
     }
 }
