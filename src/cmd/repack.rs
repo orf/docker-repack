@@ -69,16 +69,17 @@ pub fn repack(
         } else {
             #[cfg(feature = "split_files")]
             if let Some(split_size) = split_files {
-                if item.size > target_size {
-                    let key = item.key();
-                    let chunks = item.split_into_chunks(split_size.as_u64());
-                    for chunk in &chunks {
-                        let layer_id = layer_packer.layer_for(key, chunk.size(), None, None);
-                        plan.add_partial_item(layer_id, item, chunk.byte_range.clone(), chunk.dest_path())
-                    }
-                    combiner.add_chunked_file(item, chunks);
-                    continue;
-                }
+                todo!()
+                // if item.size > target_size {
+                //     let key = item.key();
+                //     let chunks = item.split_into_chunks(split_size.as_u64());
+                //     for chunk in &chunks {
+                //         let layer_id = layer_packer.layer_for(key, chunk.size(), None, None);
+                //         plan.add_partial_item(layer_id, item, chunk.byte_range.clone(), chunk.dest_path())
+                //     }
+                //     combiner.add_chunked_file(item, chunks);
+                //     continue;
+                // }
             }
 
             let decompressed_layer = &decompressed_layer_readers[item.layer_id.0];
@@ -143,11 +144,7 @@ pub fn repack(
     info!("Total image layers: {}", sorted_layers.len());
 
     for (layer, hash_and_size) in sorted_layers {
-        info!(
-            "{layer} - compressed: {} / Size: {:#.1}",
-            hash_and_size.raw_hash(),
-            display_bytes(hash_and_size.size)
-        );
+        info!("{} {layer} Size: {:#.1}", layer.id, display_bytes(hash_and_size.size));
     }
 
     Ok(())

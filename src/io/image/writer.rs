@@ -11,7 +11,7 @@ use rayon::prelude::*;
 use serde_json::json;
 use std::fmt::{Display, Formatter};
 use std::path::{Path, PathBuf};
-use tracing::info;
+use tracing::{debug, info};
 use zstd::zstd_safe::CompressionLevel;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
@@ -126,7 +126,7 @@ impl ImageWriter {
                 if !keep_temp_files {
                     std::fs::remove_file(&layer.path)?
                 }
-                info!("Compressed layer {}", layer.id);
+                debug!("Compressed layer {}", layer.id);
                 Ok::<_, anyhow::Error>((layer, hash_and_size))
             })
             .collect();

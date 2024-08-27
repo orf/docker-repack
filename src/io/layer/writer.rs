@@ -143,7 +143,6 @@ pub struct WrittenLayer {
 
 impl Display for WrittenLayer {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "WrittenLayer: ")?;
         write!(
             f,
             "raw_size={:#.1} entries={}",
