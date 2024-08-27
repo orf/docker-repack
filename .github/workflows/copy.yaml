@@ -9,6 +9,9 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/demo
 
+concurrency:
+  group: "copy"
+
 jobs:
   pull-image:
     runs-on: ubuntu-latest
