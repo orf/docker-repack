@@ -34,7 +34,6 @@ jobs:
           sudo rsync -a --delete empty/ /usr/local/lib/android &
           sudo rsync -a --delete empty/ /opt/ghc &
           sudo rsync -a --delete empty/ /opt/hostedtoolcache/CodeQL &
-          sudo rsync -a --delete empty/ /usr/share/dotnet &
           sudo docker image prune --all --force > /dev/null &
           wait
           echo "Storage now:"
