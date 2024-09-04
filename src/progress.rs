@@ -1,7 +1,8 @@
 use byte_unit::{AdjustedByte, Byte, UnitType};
+use itertools::{Itertools, Position};
 use rayon::iter::{FromParallelIterator, IndexedParallelIterator, ParallelIterator};
 use std::io::{stderr, IsTerminal};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Instant;
 use tracing::{info, info_span, Span};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
@@ -30,37 +31,30 @@ fn setup_span_spinner(span: &Span, message: &'static str) -> Span {
     Span::current()
 }
 
-#[inline(always)]
-fn tick(span: &Span, total: usize, current: usize, is_term: bool, message: &'static str) {
-    if is_term {
-        span.pb_inc(1);
-    } else {
-        let percent_done = current as f64 / total as f64 * 100.0;
-        let ten_percent = total / 10;
-        if ten_percent == 0 || current % ten_percent == 0 {
-            info!("{message} - {current}/{total} - {percent_done:.1}%");
-        }
-    }
-}
-
 pub fn progress_parallel_collect<V: FromParallelIterator<T>, T: Send>(
     message: &'static str,
     iterator: impl IndexedParallelIterator<Item = anyhow::Result<T>>,
 ) -> anyhow::Result<V> {
-    let span = info_span!("task");
-    let entered = span.enter();
     let total = iterator.len();
+    let span = info_span!("task", items = total);
+    let entered = span.enter();
     let span = setup_span_bar(&span, total, message);
     let is_term = stderr().is_terminal();
-    let current_counter = AtomicUsize::new(0);
 
-    iterator
-        .inspect(move |_| {
-            let current = current_counter.fetch_add(1, Ordering::Relaxed);
-            tick(&span, total, current, is_term, message);
-            let _ = entered;
-        })
-        .collect::<anyhow::Result<V>>()
+    if is_term {
+        iterator
+            .inspect(move |_| {
+                span.pb_inc(1);
+                let _ = entered;
+            })
+            .collect()
+    } else {
+        let start = Instant::now();
+        let res = iterator.collect();
+        info!("{message} completed in {:#.1?}", start.elapsed());
+        let _ = entered;
+        res
+    }
 }
 
 pub fn progress_iter<T>(
@@ -68,15 +62,20 @@ pub fn progress_iter<T>(
     iterator: impl ExactSizeIterator<Item = T>,
 ) -> impl ExactSizeIterator<Item = T> {
     let total = iterator.len();
-    let span = info_span!("task");
+    let span = info_span!("task", items = total);
     let entered = span.enter();
     let span = setup_span_bar(&span, total, message);
     let is_term = stderr().is_terminal();
-    let mut current = 0;
-    iterator.inspect(move |_| {
-        tick(&span, total, current, is_term, message);
-        current += 1;
+    let start = Instant::now();
+
+    iterator.with_position().map(move |(pos, v)| {
+        if is_term {
+            span.pb_inc(1);
+        } else if pos == Position::Last {
+            info!("{message} completed in {:#.1?}", start.elapsed());
+        }
         let _ = entered;
+        v
     })
 }
 

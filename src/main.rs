@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::path::{Path, PathBuf};
-use tracing::{info, instrument, Level};
+use tracing::{info, info_span, instrument, Level};
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -67,7 +67,11 @@ pub fn main() -> anyhow::Result<()> {
         .with_default_directive(Directive::from(Level::INFO))
         .from_env()?;
     tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer().with_writer(indicatif_layer.get_stderr_writer()))
+        .with(
+            tracing_subscriber::fmt::layer()
+                .compact()
+                .with_writer(indicatif_layer.get_stderr_writer()),
+        )
         .with(indicatif_layer)
         .with(env_builder)
         .init();
@@ -232,9 +236,17 @@ fn handle_input_images<T: InputImage>(
     let written_layers = progress_parallel_collect::<Vec<_>, _>(
         "Writing Layers",
         flattened_layers.into_par_iter().map(|(image, layer)| {
-            let result = output_image
-                .write_layer(layer, compression_level, image.image_digest())
-                .with_context(|| format!("Write layer {layer}"))?;
+            let raw_size = display_bytes(layer.raw_size());
+            let span = info_span!(
+                "write_layer",
+                items = layer.len(),
+                raw_size = format_args!("{:#.1}", raw_size)
+            );
+            let result = span.in_scope(|| {
+                output_image
+                    .write_layer(layer, compression_level, image.image_digest())
+                    .with_context(|| format!("Write layer {layer}"))
+            })?;
             Ok((image, result))
         }),
     )?;
