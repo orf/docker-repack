@@ -91,6 +91,8 @@ jobs:
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
 
       - name: Copy original
+        # Only copy once
+        if: matrix.target_size == '100MB'
         run: skopeo copy docker://${{ matrix.target_image }} "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original"
 
       - name: Repack image
