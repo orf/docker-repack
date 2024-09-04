@@ -97,9 +97,6 @@ jobs:
       - name: "Skopeo authenticate"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
 
-      - name: "Docker authenticate"
-        run: docker login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
-
       - name: Copy original
         run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.target_image }} "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original"
 
