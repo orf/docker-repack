@@ -9,6 +9,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    concurrency:
+      group: "build"
+      cancel-in-progress: false
+
     steps:
       - uses: actions/checkout@v4
 
