@@ -58,7 +58,7 @@ jobs:
           "spark:python3-java17",
           "storm:2.6",
           "flink:1.20-java8",
-          "php:6-php8.1-apache",
+          "wordpress:6-php8.1-apache",
         ]
 
     concurrency:
