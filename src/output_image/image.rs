@@ -17,10 +17,10 @@ use std::path::{Path, PathBuf};
 use tracing::debug;
 
 pub struct WrittenLayer<'a> {
-    pub(crate) layer: &'a OutputLayer<'a>,
-    pub(crate) compressed_file_size: u64,
-    pub(crate) raw_content_hash: String,
-    pub(crate) compressed_content_hash: String,
+    pub layer: &'a OutputLayer<'a>,
+    pub compressed_file_size: u64,
+    pub raw_content_hash: String,
+    pub compressed_content_hash: String,
 }
 
 pub struct OutputImageWriter {
@@ -60,15 +60,18 @@ impl OutputImageWriter {
             .context("Build manifest")
     }
 
-    pub fn write_image_index(self, manifests: &[(u64, String)]) -> anyhow::Result<()> {
+    pub fn write_image_index(self, manifests: &[(u64, String, WrittenImageStats)]) -> anyhow::Result<()> {
+        let description = manifests.iter().map(|(_, _, stats)| stats.description()).join("\n\n");
+
         // All of our manifests should be added to a single index, which is stored as a blob.
         let index = manifests
             .iter()
-            .map(|(size, hash)| Descriptor::new(MediaType::ImageManifest, *size as i64, format!("sha256:{hash}")))
+            .map(|(size, hash, _)| Descriptor::new(MediaType::ImageManifest, *size as i64, format!("sha256:{hash}")))
             .collect_vec();
         let image_index = ImageIndexBuilder::default()
             .schema_version(2u32)
             .media_type(MediaType::ImageIndex)
+            .annotations([("org.opencontainers.image.description".to_string(), description.clone())])
             .manifests(index)
             .build()
             .context("ImageIndexBuilder Build")?;
@@ -78,6 +81,7 @@ impl OutputImageWriter {
         let oci_index = ImageIndexBuilder::default()
             .schema_version(2u32)
             .media_type(MediaType::ImageIndex)
+            .annotations([("org.opencontainers.image.description".to_string(), description.clone())])
             .manifests(&[Descriptor::new(
                 MediaType::ImageIndex,
                 index_size as i64,
@@ -115,19 +119,18 @@ impl OutputImageWriter {
             })
             .collect_vec();
 
+        let stats = WrittenImageStats::new(written_layers, platform);
+
         let manifest = ImageManifestBuilder::default()
             .schema_version(2u32)
+            .annotations([("org.opencontainers.image.description".to_string(), stats.description())])
             .media_type(MediaType::ImageManifest)
             .config(config_descriptor)
             .layers(layer_descriptors)
             .build()
             .context("ImageManifestBuilder Build")?;
         let (manifest_size, manifest_hash) = self.add_json_to_blobs(&manifest).context("Write manifest to blobs")?;
-        Ok((
-            manifest_size,
-            manifest_hash,
-            WrittenImageStats::new(written_layers, platform),
-        ))
+        Ok((manifest_size, manifest_hash, stats))
     }
 
     fn write_config(&self, config: &ImageConfiguration, layers: &[WrittenLayer]) -> anyhow::Result<(u64, String)> {

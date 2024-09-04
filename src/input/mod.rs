@@ -35,7 +35,7 @@ pub fn get_layer_media_type(value: &str) -> Option<MediaType> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Platform {
     config: ImageConfiguration,
 }

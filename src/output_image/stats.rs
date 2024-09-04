@@ -47,4 +47,16 @@ impl WrittenImageStats {
             layers: layers.iter().map(WrittenLayerStats::from_written_layer).collect(),
         }
     }
+
+    pub fn description(&self) -> String {
+        let total_raw_size = self.layers.iter().map(|l| l.raw_file_size).sum::<u64>();
+        let total_compressed_size = self.layers.iter().map(|l| l.compressed_file_size).sum::<u64>();
+        format!(
+            "# Repacked image - {}\n\n- layers: {}\n- raw size: {}\n- compressed size: {}",
+            self.platform,
+            self.layers.len(),
+            display_bytes(total_raw_size),
+            display_bytes(total_compressed_size)
+        )
+    }
 }

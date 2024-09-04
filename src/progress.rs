@@ -6,7 +6,7 @@ use tracing::{info, info_span, Span};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 pub fn display_bytes(size: u64) -> AdjustedByte {
-    Byte::from(size).get_appropriate_unit(UnitType::Binary)
+    Byte::from(size).get_appropriate_unit(UnitType::Both)
 }
 
 const PBAR_TEMPLATE: &str = "{span_child_prefix} {msg} {percent}% {wide_bar} {per_sec} [{human_pos}/{human_len}]";

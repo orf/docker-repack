@@ -119,7 +119,8 @@ pub fn main() -> anyhow::Result<()> {
 
     let manifests = results
         .into_iter()
-        .map(|(size, hash, _)| (size, hash.clone()))
+        .map(|(size, hash, stats)| (size, hash.clone(), stats))
+        .sorted_by_key(|(_, _, stats)| stats.platform.to_string())
         .collect::<Vec<_>>();
 
     output_image.write_image_index(&manifests)?;
