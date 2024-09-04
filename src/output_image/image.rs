@@ -62,6 +62,7 @@ impl OutputImageWriter {
     }
 
     pub fn write_image_index(self, manifests: &[(u64, String)]) -> anyhow::Result<()> {
+        // All of our manifests should be added to a single index, which is stored as a blob.
         let index = manifests
             .iter()
             .map(|(size, hash)| Descriptor::new(MediaType::ImageManifest, *size as i64, format!("sha256:{hash}")))
@@ -72,7 +73,20 @@ impl OutputImageWriter {
             .manifests(index)
             .build()
             .context("ImageIndexBuilder Build")?;
-        image_index.to_file_pretty(self.output_dir.join("index.json"))?;
+        let (index_size, index_hash) = self.add_json_to_blobs(&image_index).context("Write index to blobs")?;
+
+        // Now write a single index, that points to our single sub-index.
+        let oci_index = ImageIndexBuilder::default()
+            .schema_version(2u32)
+            .media_type(MediaType::ImageIndex)
+            .manifests(&[
+                Descriptor::new(MediaType::ImageIndex, index_size as i64, format!("sha256:{index_hash}")),
+            ])
+            .build()
+            .context("ImageIndexBuilder Build")?;
+
+        oci_index.to_file_pretty(self.output_dir.join("index.json"))?;
+
         std::fs::write(self.output_dir.join("oci-layout"), "{\"imageLayoutVersion\":\"1.0.0\"}")?;
         Ok(())
     }
