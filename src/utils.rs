@@ -35,7 +35,7 @@ fn tick(span: &Span, total: usize, current: usize, is_term: bool) -> usize {
     if is_term {
         span.pb_inc(1);
     } else {
-        let percent_done = (current as f64 / total as f64 * 100.0);
+        let percent_done = current as f64 / total as f64 * 100.0;
         let ten_percent = total / 10;
         if ten_percent == 0 || current % ten_percent == 0 {
             info!("{current}/{total} - {percent_done:.1}%");
