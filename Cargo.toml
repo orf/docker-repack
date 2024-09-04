@@ -35,7 +35,8 @@ rand = "0.8.5"
 
 [profile.lto]
 inherits = "release"
-lto = "thin"
+lto = true
+codegen-units = 1
 
 [profile.flamegraph]
 inherits = "lto"

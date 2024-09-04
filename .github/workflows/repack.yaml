@@ -16,15 +16,18 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           cache-on-failure: 'false'
+          rustflags: '-C target-cpu=native'
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.5
 
       - name: Build
-        run: cargo build --profile=release
+        run: cargo build --profile=lto
         env:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"
+
+      - run: du -hs target/lto/docker-repack
 
       - uses: actions/upload-artifact@v4
         with:
@@ -51,7 +54,7 @@ jobs:
           "elasticsearch:8.15.0",
           "python:3.12",
         ]
-        type: ["25MB", "50MB", "100MB", "200MB"]
+        type: [ "25MB", "50MB", "100MB", "200MB" ]
 
     concurrency:
       group: "push-${{ matrix.target_image }}-${{ matrix.type }}"
@@ -101,7 +104,7 @@ jobs:
         run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.target_image }} "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original"
 
       - name: Repack image
-        run: ./docker-repack docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original repacked/ --target-size=${{ matrix.type }}
+        run: ./docker-repack docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original repacked/ --target-size=${{ matrix.type }} --concurrency=2
 
       - name: Copy repacked
         run: skopeo copy --all --image-parallel-copies=10 oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-${{ matrix.type }}"
