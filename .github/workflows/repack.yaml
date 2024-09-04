@@ -49,11 +49,16 @@ jobs:
       fail-fast: false
       matrix:
         target_image: [
+          "python:3.12",
           "nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04",
           "tensorflow/tensorflow:2.17.0-gpu",
           "neo4j:enterprise",
           "elasticsearch:8.15.0",
-          "python:3.12",
+          "solr:9.5",
+          "spark:python3-java17",
+          "storm:2.6",
+          "flink:1.20-java8",
+          "php:6-php8.1-apache",
         ]
 
     concurrency:
