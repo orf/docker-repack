@@ -48,7 +48,7 @@ jobs:
         type: ["original", "100MB", "200MB"]
 
     concurrency:
-      group: "push-${{ matrix.target_image }}-${{ matrix.target_size }}"
+      group: "push-${{ matrix.target_image }}-${{ matrix.type }}"
       cancel-in-progress: false
 
     env:
@@ -68,7 +68,7 @@ jobs:
 
       - name: Maximize build space
         shell: bash
-        if: matrix.target_size != 'original'
+        if: matrix.type != 'original'
         run: |
           sudo rm -rf /usr/share/dotnet &
           sudo rm -rf /usr/local/lib/android &
@@ -99,13 +99,13 @@ jobs:
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
 
       - name: Copy original
-        if: matrix.target_size == 'original'
+        if: matrix.type == 'original'
         run: skopeo copy --all docker://${{ matrix.target_image }} "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original"
 
       - name: Repack image
-        if: matrix.target_size != 'original'
-        run: ./docker-repack docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 repacked/ --target-size=${{ matrix.TARGET_SIZE }}
+        if: matrix.type != 'original'
+        run: ./docker-repack docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 repacked/ --target-size=${{ matrix.type }}
 
       - name: Copy repacked
-        if: matrix.target_size != 'original'
-        run: skopeo copy --all oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-${{ matrix.target_size }}"
+        if: matrix.type != 'original'
+        run: skopeo copy --all oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-${{ matrix.type }}"
