@@ -44,14 +44,14 @@ jobs:
       attestations: write
       id-token: write
 
-    concurrency:
-      group: "push"
-      cancel-in-progress: false
-
     strategy:
       matrix:
         target_image: ["nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04"]
         target_size: ["100MB", "200MB"]
+
+    concurrency:
+      group: "push-${{ matrix.target_image }}-${{ matrix.target_size }}"
+      cancel-in-progress: false
 
     env:
       REGISTRY: ghcr.io
