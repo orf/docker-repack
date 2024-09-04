@@ -46,6 +46,7 @@ impl<T: Write> LayerCombiner<T> {
         Ok(())
     }
 
+    #[inline(always)]
     fn should_add_path(&mut self, path: &[u8]) -> bool {
         let in_whiteout_files = self.whiteout_files.contains(path);
         let in_items = self.items.contains(path);

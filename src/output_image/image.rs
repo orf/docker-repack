@@ -158,7 +158,12 @@ impl OutputImageWriter {
         self.add_json_to_blobs(&config).context("Write config to blobs")
     }
 
-    pub fn write_layer<'a>(&'a self, layer: &'a OutputLayer, compression_level: i32) -> anyhow::Result<WrittenLayer> {
+    pub fn write_layer<'a>(
+        &'a self,
+        layer: &'a OutputLayer,
+        compression_level: i32,
+        image_digest: String,
+    ) -> anyhow::Result<WrittenLayer> {
         let mut hasher = sha2::Sha256::new();
         layer
             .to_writer_with_progress("Hashing raw layer", &mut hasher)
@@ -171,7 +176,9 @@ impl OutputImageWriter {
         let writer = layer.to_writer(&mut counter).context("Write Counter")?;
         let raw_file_size = writer.written_bytes();
 
-        let layer_path = self.temp_dir.join(format!("layer-{raw_content_hash}.tar.zst"));
+        let layer_path = self
+            .temp_dir
+            .join(format!("layer-{raw_content_hash}-for-{image_digest}.tar.zst"));
         let layer_file = File::options()
             .create(true)
             .truncate(true)

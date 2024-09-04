@@ -227,7 +227,7 @@ fn handle_input_images<T: InputImage>(
         "Writing Layers",
         flattened_layers.into_par_iter().map(|(image, layer)| {
             let result = output_image
-                .write_layer(layer, compression_level)
+                .write_layer(layer, compression_level, image.image_digest())
                 .with_context(|| format!("Write layer {layer}"))?;
             Ok((image, result))
         }),
