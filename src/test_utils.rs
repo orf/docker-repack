@@ -19,6 +19,7 @@ impl LayerBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_symlinks(mut self, symlinks: &[(impl AsRef<Path>, impl AsRef<Path>)]) -> Self {
         self.symlinks.extend(
             symlinks
@@ -28,6 +29,7 @@ impl LayerBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_hardlinks(mut self, hardlinks: &[(impl AsRef<Path>, impl AsRef<Path>)]) -> Self {
         self.hardlinks.extend(
             hardlinks
@@ -37,6 +39,7 @@ impl LayerBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_directories(mut self, directories: &[impl AsRef<Path>]) -> Self {
         self.directories
             .extend(directories.iter().map(|p| p.as_ref().to_path_buf()));

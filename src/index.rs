@@ -57,11 +57,6 @@ impl<'a, T: AsRef<[u8]> + 'a> ImageItems<T> {
         debug_assert_eq!(items.len(), self.total_items);
         Ok(items)
     }
-
-    #[cfg(test)]
-    pub fn len(&self) -> usize {
-        self.total_items
-    }
 }
 
 #[derive(Debug)]
