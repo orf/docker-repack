@@ -5,16 +5,13 @@ on:
     branches:
       - main
 
-concurrency:
-  group: "repack"
-  cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           cache-on-failure: 'false'
@@ -27,6 +24,7 @@ jobs:
         env:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"
+
       - uses: actions/upload-artifact@v4
         with:
           name: cli
@@ -41,6 +39,10 @@ jobs:
       packages: write
       attestations: write
       id-token: write
+
+    concurrency:
+      group: "push"
+      cancel-in-progress: false
 
     strategy:
       matrix:
