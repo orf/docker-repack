@@ -12,7 +12,7 @@ const WHITEOUT_PREFIX: &[u8] = b".wh.";
 pub struct LayerCombiner<T: Write> {
     archive: Builder<T>,
     items: HashSet<Vec<u8>>,
-    whiteout_directories: HashSet<Vec<u8>>,
+    whiteout_directories: Vec<Vec<u8>>,
     whiteout_files: HashSet<Vec<u8>>,
 }
 
@@ -22,7 +22,7 @@ impl<T: Write> LayerCombiner<T> {
         Self {
             archive,
             items: HashSet::new(),
-            whiteout_directories: HashSet::new(),
+            whiteout_directories: Vec::new(),
             whiteout_files: HashSet::new(),
         }
     }
@@ -31,7 +31,9 @@ impl<T: Write> LayerCombiner<T> {
         let entry_path = entry.path_bytes().to_vec();
         if entry_path.ends_with(WHITEOUT_OPAQUE) {
             let directory = &entry_path[..entry_path.len() - WHITEOUT_OPAQUE.len()];
-            self.whiteout_directories.insert(directory.to_vec());
+            if !self.whiteout_directories.iter().any(|v| v == directory) {
+                self.whiteout_directories.push(directory.to_vec());
+            }
         } else if let Some(whiteout) = memmem::rfind(&entry_path, WHITEOUT_PREFIX) {
             let whiteout_file_name = &entry_path[whiteout + WHITEOUT_PREFIX.len()..];
             let whiteout_directory = &entry_path[..whiteout];
@@ -136,7 +138,7 @@ mod tests {
         combiner.merge_layer(input_layer_1).unwrap();
         combiner.merge_layer(input_layer_2).unwrap();
 
-        assert_eq!(combiner.whiteout_directories, HashSet::from([b"test/".to_vec()]));
+        assert_eq!(combiner.whiteout_directories, [b"test/".to_vec()]);
         assert_eq!(combiner.items.len(), 1);
     }
 

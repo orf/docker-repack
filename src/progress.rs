@@ -11,7 +11,7 @@ pub fn display_bytes(size: u64) -> AdjustedByte {
 
 const PBAR_TEMPLATE: &str = "{span_child_prefix} {msg} {percent}% {wide_bar} {per_sec} [{human_pos}/{human_len}]";
 
-const SPINNER_TEMPLATE: &str = "{span_child_prefix} {spinner} {msg} {per_sec}";
+const SPINNER_TEMPLATE: &str = "{span_child_prefix} {spinner} {msg} {human_pos} - {per_sec}";
 
 fn setup_span_bar(span: &Span, size: usize, message: &'static str) -> Span {
     span.pb_set_message(message);
