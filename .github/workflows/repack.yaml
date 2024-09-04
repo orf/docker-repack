@@ -99,10 +99,13 @@ jobs:
       - name: "Skopeo authenticate"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
 
-      - name: Copy original
+      - name: Copy original - GHCR
+        run: skopeo copy --all --image-parallel-copies=10 "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original" oci:original || true
+
+      - name: Copy original - Docker
         run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.target_image }} oci:original
 
-      - name: Push original
+      - name: Push original - GHCR
         run: skopeo copy --all --image-parallel-copies=10 oci:original "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original"
 
       - name: 25mb repack
