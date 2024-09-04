@@ -37,7 +37,7 @@ jobs:
 
   repack-image:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [ build ]
     permissions:
       contents: read
       packages: write
@@ -54,10 +54,9 @@ jobs:
           "elasticsearch:8.15.0",
           "python:3.12",
         ]
-        type: [ "25MB", "50MB", "100MB", "200MB" ]
 
     concurrency:
-      group: "push-${{ matrix.target_image }}-${{ matrix.type }}"
+      group: "push-${{ matrix.target_image }}"
       cancel-in-progress: false
 
     env:
@@ -101,10 +100,31 @@ jobs:
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
 
       - name: Copy original
-        run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.target_image }} "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original"
+        run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.target_image }} oci:original
 
-      - name: Repack image
-        run: ./docker-repack docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original repacked/ --target-size=${{ matrix.type }} --concurrency=2
+      - name: Push original
+        run: skopeo copy --all --image-parallel-copies=10 oci:original "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original"
 
-      - name: Copy repacked
-        run: skopeo copy --all --image-parallel-copies=10 oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-${{ matrix.type }}"
+      - name: 25mb repack
+        run: |
+          ./docker-repack oci://original/ repacked/ --target-size=25MB --concurrency=2
+          skopeo copy --all --image-parallel-copies=10 oci:repacked/25/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-25mb"
+          rm -rf repacked/25/
+
+      - name: 50mb repack
+        run: |
+          ./docker-repack oci://original/ repacked/ --target-size=50MB --concurrency=2
+          skopeo copy --all --image-parallel-copies=10 oci:repacked/50/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-50mb"
+          rm -rf repacked/50/
+
+      - name: 100mb repack
+        run: |
+          ./docker-repack oci://original/ repacked/ --target-size=100MB --concurrency=2
+          skopeo copy --all --image-parallel-copies=10 oci:repacked/100/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-100mb"
+          rm -rf repacked/100/
+
+      - name: 200mb repack
+        run: |
+          ./docker-repack oci://original/ repacked/ --target-size=200MB --concurrency=2
+          skopeo copy --all --image-parallel-copies=10 oci:repacked/200/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-200mb"
+          rm -rf repacked/200/
