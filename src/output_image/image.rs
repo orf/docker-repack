@@ -79,9 +79,11 @@ impl OutputImageWriter {
         let oci_index = ImageIndexBuilder::default()
             .schema_version(2u32)
             .media_type(MediaType::ImageIndex)
-            .manifests(&[
-                Descriptor::new(MediaType::ImageIndex, index_size as i64, format!("sha256:{index_hash}")),
-            ])
+            .manifests(&[Descriptor::new(
+                MediaType::ImageIndex,
+                index_size as i64,
+                format!("sha256:{index_hash}"),
+            )])
             .build()
             .context("ImageIndexBuilder Build")?;
 

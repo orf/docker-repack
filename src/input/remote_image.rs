@@ -16,43 +16,46 @@ use tokio::runtime::Handle;
 use tokio_util::io::SyncIoBridge;
 use tracing::{debug, instrument, trace, warn};
 
-fn build_auth(reference: &Reference) -> anyhow::Result<RegistryAuth> {
+#[instrument(skip_all, fields(reference = %reference))]
+fn build_auth(reference: &Reference) -> RegistryAuth {
     let server = reference
         .resolve_registry()
         .strip_suffix('/')
         .unwrap_or_else(|| reference.resolve_registry());
 
-    match docker_credential::get_credential(server) {
-        Err(CredentialRetrievalError::ConfigNotFound) => Ok(RegistryAuth::Anonymous),
-        Err(CredentialRetrievalError::NoCredentialConfigured) => Ok(RegistryAuth::Anonymous),
-        Err(e) => {
-            match e {
+    let auth_results = [
+        ("docker", docker_credential::get_credential(server)),
+        ("podman", docker_credential::get_podman_credential(server)),
+    ];
+
+    for (name, cred_result) in auth_results.into_iter() {
+        match cred_result {
+            Err(e) => match e {
                 CredentialRetrievalError::HelperFailure { stdout, stderr } => {
                     let base_message =
                         "Credential helper returned non-zero response code, falling back to anonymous auth";
                     if !stderr.is_empty() || !stdout.is_empty() {
                         let extra = [stdout.trim(), stderr.trim()].join(" - ");
-                        warn!("{base_message}: stdout/stderr = {extra}");
+                        warn!("{name}: {base_message}: stdout/stderr = {extra}");
                     } else {
-                        warn!("{base_message}");
+                        warn!("{name}: {base_message}");
                     };
                 }
-                _ => {
-                    warn!("Error getting docker credentials, falling back to anonymous auth: {e}");
+                e => {
+                    debug!("{name}: {e}");
                 }
+            },
+            Ok(DockerCredential::UsernamePassword(username, password)) => {
+                debug!("{name}: Found docker credentials");
+                return RegistryAuth::Basic(username, password);
             }
-
-            Ok(RegistryAuth::Anonymous)
-        }
-        Ok(DockerCredential::UsernamePassword(username, password)) => {
-            debug!("Found docker credentials");
-            Ok(RegistryAuth::Basic(username, password))
-        }
-        Ok(DockerCredential::IdentityToken(_)) => {
-            warn!("Cannot use contents of docker config, identity token not supported. Using anonymous auth");
-            Ok(RegistryAuth::Anonymous)
-        }
+            Ok(DockerCredential::IdentityToken(_)) => {
+                warn!("{name}: Cannot use contents of docker config, identity token not supported.");
+            }
+        };
     }
+    debug!("No credentials found, using anonymous auth");
+    RegistryAuth::Anonymous
 }
 
 pub struct RemoteImage {
@@ -107,7 +110,7 @@ impl RemoteImage {
     }
 
     async fn from_list_async(reference: Reference) -> anyhow::Result<Vec<Self>> {
-        let auth = build_auth(&reference).context("Get Authentication")?;
+        let auth = build_auth(&reference);
         let client = Client::new(Default::default());
         debug!("Fetching manifest list for {}", reference);
         let (manifest_content, _) = client
