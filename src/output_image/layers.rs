@@ -109,7 +109,6 @@ impl<'a> OutputLayer<'a> {
     }
 
     #[inline(always)]
-    #[allow(dead_code)]
     pub fn to_writer<T: Write>(&'a self, out: &'a mut T) -> anyhow::Result<&'a mut T> {
         self.to_writer_from_iterable(out, self.items.iter())
     }

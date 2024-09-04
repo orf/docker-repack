@@ -152,9 +152,7 @@ impl OutputImageWriter {
         let raw_content_hash = raw_content_buffer.as_str().to_string();
 
         let mut counter = WriteCounter::new();
-        let writer = layer
-            .to_writer_with_progress("Fetching raw size", &mut counter)
-            .context("Write Counter")?;
+        let writer = layer.to_writer(&mut counter).context("Write Counter")?;
         let raw_file_size = writer.written_bytes();
 
         let layer_path = self.temp_dir.join(format!("layer-{raw_content_hash}.tar.zst"));
