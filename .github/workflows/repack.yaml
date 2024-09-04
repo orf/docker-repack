@@ -89,9 +89,6 @@ jobs:
           rename-to: skopeo
           chmod: 0755
 
-      - run: ls /opt/hostedtoolcache/lework/skopeo-binary/v1.16.1/linux-x64
-      - run: /opt/hostedtoolcache/lework/skopeo-binary/v1.16.1/linux-x64/skopeo --version
-
       - name: skopeo version
         run: skopeo --version
 
@@ -100,7 +97,7 @@ jobs:
 
       - name: Copy original
         if: matrix.type == 'original'
-        run: skopeo copy --all docker://${{ matrix.target_image }} "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original"
+        run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.target_image }} "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original"
 
       - name: Repack image
         if: matrix.type != 'original'
@@ -108,4 +105,4 @@ jobs:
 
       - name: Copy repacked
         if: matrix.type != 'original'
-        run: skopeo copy --all oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-${{ matrix.type }}"
+        run: skopeo copy --all --image-parallel-copies=10 oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-${{ matrix.type }}"
