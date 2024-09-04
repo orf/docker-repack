@@ -35,9 +35,10 @@ fn tick(span: &Span, total: usize, current: usize, is_term: bool) -> usize {
     if is_term {
         span.pb_inc(1);
     } else {
+        let percent_done = (current as f64 / total as f64 * 100.0);
         let ten_percent = total / 10;
-        if current % ten_percent == 0 {
-            info!("{}%", (current as f64 / total as f64 * 100.0) as u64);
+        if ten_percent == 0 || current % ten_percent == 0 {
+            info!("{current}/{total} - {percent_done:.1}%");
         }
     }
     total + 1
@@ -45,7 +46,7 @@ fn tick(span: &Span, total: usize, current: usize, is_term: bool) -> usize {
 
 pub fn progress_parallel_collect<V: FromParallelIterator<T>, T: Send>(
     message: &'static str,
-    iterator: impl IndexedParallelIterator<Item=anyhow::Result<T>>,
+    iterator: impl IndexedParallelIterator<Item = anyhow::Result<T>>,
 ) -> anyhow::Result<V> {
     let span = info_span!("task");
     let entered = span.enter();
@@ -65,8 +66,8 @@ pub fn progress_parallel_collect<V: FromParallelIterator<T>, T: Send>(
 
 pub fn progress_iter<T>(
     message: &'static str,
-    iterator: impl ExactSizeIterator<Item=T>,
-) -> impl ExactSizeIterator<Item=T> {
+    iterator: impl ExactSizeIterator<Item = T>,
+) -> impl ExactSizeIterator<Item = T> {
     let total = iterator.len();
     let span = info_span!("task");
     let entered = span.enter();
@@ -79,7 +80,7 @@ pub fn progress_iter<T>(
     })
 }
 
-pub fn spinner_iter<T>(message: &'static str, iterator: impl Iterator<Item=T>) -> impl Iterator<Item=T> {
+pub fn spinner_iter<T>(message: &'static str, iterator: impl Iterator<Item = T>) -> impl Iterator<Item = T> {
     let span = info_span!("task");
     let entered = span.enter();
     let span = setup_span_spinner(&span, message);
