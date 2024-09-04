@@ -9,6 +9,7 @@ use itertools::Itertools;
 use memmap2::Mmap;
 use output_image::image::OutputImageWriter;
 use output_image::layers::OutputLayers;
+use rand::prelude::*;
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -216,10 +217,14 @@ fn handle_input_images<T: InputImage>(
         })
         .collect::<anyhow::Result<Vec<_>>>()?;
 
-    let flattened_layers = output_layers
+    let mut flattened_layers = output_layers
         .iter()
         .flat_map(|(image, layers)| layers.all_layers().iter().map(move |layer| (image, layer)))
         .collect::<Vec<_>>();
+
+    // Shuffle the layers to avoid any bias in the order of the layers
+    // We re-sort the layers in write_oci_image
+    flattened_layers.shuffle(&mut thread_rng());
 
     info!("Produced {} total layers", flattened_layers.len());
 

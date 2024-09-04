@@ -54,7 +54,6 @@ impl OutputImageWriter {
         mut written_layers: Vec<WrittenLayer>,
         platform: Platform,
     ) -> anyhow::Result<(u64, String, WrittenImageStats)> {
-        // let mut written_layers = self.write_layers(layers, compression_level).context("Write layers")?;
         written_layers.sort_by_key(|l| (l.layer.type_, l.compressed_file_size));
         let (config_size, config_hash) = self.write_config(&config, &written_layers).context("Write config")?;
         self.build_manifest(config_size, config_hash, &written_layers, platform)

@@ -583,6 +583,7 @@ dependencies = [
  "memmap2",
  "oci-client",
  "oci-spec",
+ "rand",
  "rayon",
  "serde",
  "serde_json",

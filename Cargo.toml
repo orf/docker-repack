@@ -31,6 +31,7 @@ docker_credential = "1.3.1"
 tokio-util = { version = "0.7.11", features = ["full"] }
 clap = { version = "4.5.16", features = ["derive"] }
 shadow-rs = "0.33.0"
+rand = "0.8.5"
 
 [profile.lto]
 inherits = "release"
