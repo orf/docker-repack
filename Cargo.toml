@@ -12,11 +12,11 @@ memmap2 = "0.9.4"
 strum = { version = "0.26.3", features = ["derive"] }
 memchr = { version = "2.7.4", default-features = false, features = ["std"] }
 anyhow = "1.0.86"
-zstd = { version = "0.13.2", default-features = false, features = ["experimental", "bindgen", "thin", "thin-lto"] }
+zstd = { version = "0.13.2", features = ["experimental", "thin", "thin-lto"] }
 tar = { version = "0.4.41", default-features = false }
 itertools = "0.13.0"
 flate2 = "1.0.33"
-byte-unit = { version = "5.1.4"}
+byte-unit = { version = "5.1.4" }
 sha2 = { version = "0.10.8" }
 oci-spec = { version = "0.6.8", default-features = false, features = ["image"] }
 serde_json = { version = "1.0.127", default-features = false }
