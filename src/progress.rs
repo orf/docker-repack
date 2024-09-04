@@ -31,17 +31,16 @@ fn setup_span_spinner(span: &Span, message: &'static str) -> Span {
 }
 
 #[inline(always)]
-fn tick(span: &Span, total: usize, current: usize, is_term: bool) -> usize {
+fn tick(span: &Span, total: usize, current: usize, is_term: bool, message: &'static str) {
     if is_term {
         span.pb_inc(1);
     } else {
         let percent_done = current as f64 / total as f64 * 100.0;
         let ten_percent = total / 10;
         if ten_percent == 0 || current % ten_percent == 0 {
-            info!("{current}/{total} - {percent_done:.1}%");
+            info!("{message} - {current}/{total} - {percent_done:.1}%");
         }
     }
-    total + 1
 }
 
 pub fn progress_parallel_collect<V: FromParallelIterator<T>, T: Send>(
@@ -58,7 +57,7 @@ pub fn progress_parallel_collect<V: FromParallelIterator<T>, T: Send>(
     iterator
         .inspect(move |_| {
             let current = current_counter.fetch_add(1, Ordering::Relaxed);
-            tick(&span, total, current, is_term);
+            tick(&span, total, current, is_term, message);
             let _ = entered;
         })
         .collect::<anyhow::Result<V>>()
@@ -75,7 +74,8 @@ pub fn progress_iter<T>(
     let is_term = stderr().is_terminal();
     let mut current = 0;
     iterator.inspect(move |_| {
-        current = tick(&span, total, current, is_term);
+        tick(&span, total, current, is_term, message);
+        current += 1;
         let _ = entered;
     })
 }

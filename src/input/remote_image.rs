@@ -1,6 +1,6 @@
 use crate::input::layers::InputLayer;
 use crate::input::{get_layer_media_type, InputImage};
-use crate::utils;
+use crate::progress;
 use anyhow::Context;
 use docker_credential::{CredentialRetrievalError, DockerCredential};
 use itertools::Itertools;
@@ -122,7 +122,7 @@ impl RemoteImage {
             }
             OciManifest::ImageIndex(index) => {
                 debug!("Found image index");
-                let iterator = utils::progress_iter("Reading Manifests", index.manifests.into_iter());
+                let iterator = progress::progress_iter("Reading Manifests", index.manifests.into_iter());
                 let manifests = iterator
                     .filter(|entry| match entry.platform.as_ref() {
                         Some(platform) if platform.os == "linux" => true,

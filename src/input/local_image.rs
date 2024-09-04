@@ -1,6 +1,6 @@
 use crate::input::layers::InputLayer;
 use crate::input::InputImage;
-use crate::utils;
+use crate::progress;
 use anyhow::{bail, Context};
 use oci_spec::image::{Descriptor, ImageConfiguration, ImageIndex, ImageManifest, MediaType, Os};
 use std::fmt::{Debug, Display, Formatter};
@@ -70,13 +70,15 @@ impl LocalOciImage {
         let manifest_path = directory.join("manifest.json");
 
         if index_path.exists() {
+            debug!("Reading index from {index_path:?}");
             let index = ImageIndex::from_file(&index_path)
                 .with_context(|| format!("Error reading index from {index_path:?}"))?;
             let mut images = vec![];
-            let manifest_iterator = utils::progress_iter("Reading Manifests", index.manifests().iter());
+            let manifest_iterator = progress::progress_iter("Reading Manifests", index.manifests().iter());
             for manifest_descriptor in manifest_iterator {
                 match manifest_descriptor.media_type() {
                     MediaType::ImageManifest => {
+                        debug!("Reading image manifest from {}", manifest_descriptor.digest());
                         let manifest = read_blob_image_manifest(&blob_directory, manifest_descriptor)
                             .context("Reading manifest")?;
                         let img = Self::from_image_manifest(manifest, blob_directory.clone())
@@ -84,6 +86,7 @@ impl LocalOciImage {
                         images.push(img);
                     }
                     MediaType::ImageIndex => {
+                        debug!("Reading image index from {}", manifest_descriptor.digest());
                         let index =
                             read_blob_image_index(&blob_directory, manifest_descriptor).context("Reading index")?;
                         images.extend(
@@ -97,6 +100,7 @@ impl LocalOciImage {
             }
             Ok(images)
         } else if manifest_path.exists() {
+            debug!("Reading manifest from {manifest_path:?}");
             let manifest = ImageManifest::from_file(&manifest_path)
                 .with_context(|| format!("Error reading manifest from {manifest_path:?}"))?;
             let img = Self::from_image_manifest(manifest, blob_directory).context("Constructing LocalOciImage")?;

@@ -14,6 +14,7 @@ use std::fmt::{Debug, Display};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read};
 use std::path::{Path, PathBuf};
+use tracing::debug;
 
 pub struct WrittenLayer<'a> {
     pub(crate) layer: &'a OutputLayer<'a>,
@@ -143,13 +144,17 @@ impl OutputImageWriter {
 
     pub fn write_layer<'a>(&'a self, layer: &'a OutputLayer, compression_level: i32) -> anyhow::Result<WrittenLayer> {
         let mut hasher = sha2::Sha256::new();
-        layer.to_writer(&mut hasher).context("Hashing with to_writer")?;
+        layer
+            .to_writer_with_progress("Hashing raw layer", &mut hasher)
+            .context("Hashing with to_writer")?;
         let digest: [u8; 32] = hasher.finalize().into();
         let raw_content_buffer: const_hex::Buffer<32> = const_hex::const_encode(&digest);
         let raw_content_hash = raw_content_buffer.as_str().to_string();
 
         let mut counter = WriteCounter::new();
-        let writer = layer.to_writer(&mut counter).context("Write Counter")?;
+        let writer = layer
+            .to_writer_with_progress("Fetching raw size", &mut counter)
+            .context("Write Counter")?;
         let raw_file_size = writer.written_bytes();
 
         let layer_path = self.temp_dir.join(format!("layer-{raw_content_hash}.tar.zst"));
@@ -163,9 +168,12 @@ impl OutputImageWriter {
             .new_writer(BufWriter::new(layer_file), compression_level)
             .context("Constructing CompressedWriter")?;
         out.tune_for_output_size(raw_file_size)?;
-        layer.to_writer(&mut out).context("to_writer")?;
+        layer
+            .to_writer_with_progress("Compressing layer", &mut out)
+            .context("to_writer")?;
         out.finish().context("Finishing compression")?;
 
+        debug!("Layer compressed to {:?}", layer_path);
         let (compressed_file_size, compressed_content_hash) =
             self.add_path_to_blobs(&layer_path).context("Adding layer to blobs")?;
         Ok(WrittenLayer {

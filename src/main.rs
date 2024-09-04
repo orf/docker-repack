@@ -25,12 +25,12 @@ mod input;
 mod io_utils;
 mod layer_combiner;
 mod output_image;
+mod progress;
 #[cfg(test)]
 mod test_utils;
-mod utils;
 
 use crate::input::local_image::LocalOciImage;
-use crate::utils::{display_bytes, progress_parallel_collect};
+use crate::progress::{display_bytes, progress_parallel_collect};
 use input::source::SourceImage;
 use output_image::stats::WrittenImageStats;
 use shadow_rs::shadow;
@@ -64,13 +64,12 @@ pub fn main() -> anyhow::Result<()> {
     let indicatif_layer = IndicatifLayer::new().with_max_progress_bars(14, None);
     let env_builder = EnvFilter::builder()
         .with_default_directive(Directive::from(Level::INFO))
-        .from_env_lossy();
+        .from_env()?;
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_writer(indicatif_layer.get_stderr_writer()))
         .with(indicatif_layer)
         .with(env_builder)
         .init();
-
     let args = Args::parse();
 
     let output_dir = args.output_dir;
@@ -90,14 +89,12 @@ pub fn main() -> anyhow::Result<()> {
         SourceImage::Oci(path) => {
             info!("Reading images from OCI directory: {}", path.display());
             let images = LocalOciImage::from_oci_directory(path)?;
-            info!("Found {} images", images.len());
             handle_input_images(images, &temp_dir, &output_image, target_size, args.compression_level)?
         }
         SourceImage::Docker(reference) => {
             info!("Reading images registry: {}", reference);
             let runtime = tokio::runtime::Runtime::new()?;
             let images = RemoteImage::create_remote_images(runtime.handle(), reference)?;
-            info!("Found {} images", images.len());
             handle_input_images(images, &temp_dir, &output_image, target_size, args.compression_level)?
         }
     };
@@ -136,6 +133,11 @@ fn handle_input_images<T: InputImage>(
     target_size: Byte,
     compression_level: i32,
 ) -> anyhow::Result<Vec<(u64, String, WrittenImageStats)>> {
+    info!("Found {} images", images.len());
+    for image in &images {
+        info!(" - {} - digest: {}", image.platform(), image.image_digest());
+    }
+
     let images = progress_parallel_collect::<Vec<_>, _>(
         "Loading and merging",
         images.into_par_iter().map(|input_image| {
@@ -254,9 +256,9 @@ fn load_and_merge_image(input_image: &impl InputImage, combined_path: &Path) -> 
         .open(combined_path)?;
     let mut combiner = LayerCombiner::new(combined_output_file);
     let layer_iterator = input_image.layers_from_manifest()?;
-    for input_layer in utils::progress_iter("Merging Layers", layer_iterator) {
+    for input_layer in progress::progress_iter("Merging Layers", layer_iterator) {
         let mut input_layer = input_layer?;
-        let entries = utils::spinner_iter("Merging Entries", input_layer.entries()?);
+        let entries = progress::spinner_iter("Merging Entries", input_layer.entries()?);
         combiner.merge_entries(entries)?;
     }
 

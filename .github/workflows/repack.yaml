@@ -83,7 +83,9 @@ jobs:
           repo: lework/skopeo-binary
           tag: v1.16.1
           cache: enable
-          extension-matching: "disable"
+          extension-matching: disable
+          rename-to: skopeo
+          chmod: 0755
 
       - name: skopeo version
         run: skopeo --version

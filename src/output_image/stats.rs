@@ -1,7 +1,7 @@
 use crate::input::Platform;
 use crate::output_image::image::WrittenLayer;
 use crate::output_image::layers::LayerType;
-use crate::utils::display_bytes;
+use crate::progress::display_bytes;
 use std::fmt::Display;
 
 pub struct WrittenLayerStats {

@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use tar::{Builder, EntryType};
 
-use crate::utils::display_bytes;
+use crate::progress::{display_bytes, progress_iter};
 #[cfg(test)]
 use std::collections::HashSet;
 use std::fmt::{Debug, Display, Formatter};
@@ -83,9 +83,13 @@ impl<'a> OutputLayer<'a> {
     }
 
     #[inline(always)]
-    pub fn to_writer<T: Write>(&self, out: &'a mut T) -> anyhow::Result<&'a mut T> {
+    fn to_writer_from_iterable<T: Write>(
+        &self,
+        out: &'a mut T,
+        items: impl Iterator<Item = &'a &'a ImageItem<'a>>,
+    ) -> anyhow::Result<&'a mut T> {
         let mut archive = Builder::new(out);
-        for item in &self.items {
+        for item in items {
             if item.content.is_empty() {
                 archive.append(&item.header, std::io::empty())?;
             } else {
@@ -93,6 +97,21 @@ impl<'a> OutputLayer<'a> {
             }
         }
         Ok(archive.into_inner()?)
+    }
+
+    #[inline(always)]
+    pub fn to_writer_with_progress<T: Write>(
+        &'a self,
+        name: &'static str,
+        out: &'a mut T,
+    ) -> anyhow::Result<&'a mut T> {
+        self.to_writer_from_iterable(out, progress_iter(name, self.items.iter()))
+    }
+
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn to_writer<T: Write>(&'a self, out: &'a mut T) -> anyhow::Result<&'a mut T> {
+        self.to_writer_from_iterable(out, self.items.iter())
     }
 
     #[cfg(test)]
