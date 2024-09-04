@@ -70,6 +70,7 @@ pub fn main() -> anyhow::Result<()> {
         .with(
             tracing_subscriber::fmt::layer()
                 .compact()
+                .with_thread_names(true)
                 .with_writer(indicatif_layer.get_stderr_writer()),
         )
         .with(indicatif_layer)
@@ -84,11 +85,10 @@ pub fn main() -> anyhow::Result<()> {
     let output_image =
         OutputImageWriter::new(output_dir.to_path_buf(), temp_dir.clone()).context("Construct OutputImageWriter")?;
 
-    if let Some(concurrency) = args.concurrency {
-        rayon::ThreadPoolBuilder::new()
-            .num_threads(concurrency)
-            .build_global()?;
-    }
+    rayon::ThreadPoolBuilder::new()
+        .thread_name(|i| format!("thread-{}", i))
+        .num_threads(args.concurrency.unwrap_or_default())
+        .build_global()?;
 
     let results = match args.source {
         SourceImage::Oci(path) => {
