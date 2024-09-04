@@ -61,7 +61,7 @@ impl OutputImageWriter {
     }
 
     pub fn write_image_index(self, manifests: &[(u64, String, WrittenImageStats)]) -> anyhow::Result<()> {
-        let description = manifests.iter().map(|(_, _, stats)| stats.description()).join("\n\n");
+        let description = manifests.iter().map(|(_, _, stats)| stats.description()).join(" / ");
 
         // All of our manifests should be added to a single index, which is stored as a blob.
         let index = manifests

@@ -52,7 +52,7 @@ impl WrittenImageStats {
         let total_raw_size = self.layers.iter().map(|l| l.raw_file_size).sum::<u64>();
         let total_compressed_size = self.layers.iter().map(|l| l.compressed_file_size).sum::<u64>();
         format!(
-            "# Repacked image - {}\n\n- layers: {}\n- raw size: {}\n- compressed size: {}",
+            "{}: layers={} compressed:{:#.1} raw:{:#.1}",
             self.platform,
             self.layers.len(),
             display_bytes(total_raw_size),
