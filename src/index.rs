@@ -1,12 +1,14 @@
 use memmap2::Mmap;
 use sha2::Digest;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use tar::{Archive, Header};
 use zstd::bulk::Compressor;
 use zstd::zstd_safe;
+
+#[cfg(test)]
+use std::collections::HashMap;
 
 const EMPTY_SHA: [u8; 32] = [
     227, 176, 196, 66, 152, 252, 28, 20, 154, 251, 244, 200, 153, 111, 185, 36, 39, 174, 65, 228, 100, 155, 147, 76,
@@ -29,6 +31,7 @@ impl ImageItems<Mmap> {
 }
 
 impl<'a, T: AsRef<[u8]> + 'a> ImageItems<T> {
+    #[cfg(test)]
     pub fn from_data(data: T, total_items: usize) -> ImageItems<T> {
         assert_ne!(data.as_ref().len(), 0);
         ImageItems { total_items, data }
@@ -55,6 +58,7 @@ impl<'a, T: AsRef<[u8]> + 'a> ImageItems<T> {
         Ok(items)
     }
 
+    #[cfg(test)]
     pub fn len(&self) -> usize {
         self.total_items
     }

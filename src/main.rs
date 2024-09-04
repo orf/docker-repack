@@ -312,7 +312,6 @@ mod tests {
         let image_items = ImageItem::items_from_data(content, 1).unwrap();
         assert_eq!(image_items.len(), 9);
         let layers = OutputLayers::pack_items(&image_items, 4096, 1024 * 1024 * 250).unwrap();
-        let content = items.get_image_content().unwrap();
         assert_eq!(layers.len(), 1);
     }
 }
