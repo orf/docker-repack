@@ -1,27 +1,13 @@
-use std::io::{stderr, IsTerminal};
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use byte_unit::{AdjustedByte, Byte, UnitType};
 use rayon::iter::{FromParallelIterator, IndexedParallelIterator, ParallelIterator};
-use tracing::{info_span, Span};
+use std::io::{stderr, IsTerminal};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use tracing::{info, info_span, Span};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 pub fn display_bytes(size: u64) -> AdjustedByte {
     Byte::from(size).get_appropriate_unit(UnitType::Binary)
 }
-
-// pub struct SpanProgress<'a, T: ExactSizeIterator> {
-//     span: Span,
-//     guard: Entered<'a>,
-//     iterator: T,
-// }
-//
-// impl<T: ExactSizeIterator> Iterator for SpanProgress<'_, T> {
-//     type Item = T::Item;
-//
-//     fn next(&mut self) -> Option<Self::Item> {
-//         self.iterator.next()
-//     }
-// }
 
 const PBAR_TEMPLATE: &str = "{span_child_prefix} {msg} {percent}% {wide_bar} {per_sec} [{human_pos}/{human_len}]";
 
@@ -45,29 +31,33 @@ fn setup_span_spinner(span: &Span, message: &'static str) -> Span {
 }
 
 #[inline(always)]
-fn tick(span: &Span, total: usize, is_term: bool) -> usize {
+fn tick(span: &Span, total: usize, current: usize, is_term: bool) -> usize {
     if is_term {
         span.pb_inc(1);
     } else {
-        span.pb_inc(1);
+        let ten_percent = total / 10;
+        if current % ten_percent == 0 {
+            info!("{}%", (current as f64 / total as f64 * 100.0) as u64);
+        }
     }
     total + 1
 }
 
 pub fn progress_parallel_collect<V: FromParallelIterator<T>, T: Send>(
     message: &'static str,
-    iterator: impl IndexedParallelIterator<Item = anyhow::Result<T>>,
+    iterator: impl IndexedParallelIterator<Item=anyhow::Result<T>>,
 ) -> anyhow::Result<V> {
     let span = info_span!("task");
     let entered = span.enter();
-    let span = setup_span_bar(&span, iterator.len(), message);
+    let total = iterator.len();
+    let span = setup_span_bar(&span, total, message);
     let is_term = stderr().is_terminal();
-    let total_counter = AtomicUsize::new(0);
+    let current_counter = AtomicUsize::new(0);
 
     iterator
         .inspect(move |_| {
-            let total = total_counter.fetch_add(1, Ordering::Relaxed);
-            tick(&span, total, is_term);
+            let current = current_counter.fetch_add(1, Ordering::Relaxed);
+            tick(&span, total, current, is_term);
             let _ = entered;
         })
         .collect::<anyhow::Result<V>>()
@@ -75,29 +65,27 @@ pub fn progress_parallel_collect<V: FromParallelIterator<T>, T: Send>(
 
 pub fn progress_iter<T>(
     message: &'static str,
-    iterator: impl ExactSizeIterator<Item = T>,
-) -> impl ExactSizeIterator<Item = T> {
-    let size = iterator.len();
+    iterator: impl ExactSizeIterator<Item=T>,
+) -> impl ExactSizeIterator<Item=T> {
+    let total = iterator.len();
     let span = info_span!("task");
     let entered = span.enter();
-    let span = setup_span_bar(&span, size, message);
+    let span = setup_span_bar(&span, total, message);
     let is_term = stderr().is_terminal();
-    let mut total = 0;
+    let mut current = 0;
     iterator.inspect(move |_| {
-        total = tick(&span, total, is_term);
+        current = tick(&span, total, current, is_term);
         let _ = entered;
     })
 }
 
-pub fn spinner_iter<T>(message: &'static str, iterator: impl Iterator<Item = T>) -> impl Iterator<Item = T> {
+pub fn spinner_iter<T>(message: &'static str, iterator: impl Iterator<Item=T>) -> impl Iterator<Item=T> {
     let span = info_span!("task");
     let entered = span.enter();
     let span = setup_span_spinner(&span, message);
-    let is_term = stderr().is_terminal();
-    let mut total = 0;
 
     iterator.inspect(move |_| {
-        total = tick(&span, total, is_term);
+        span.pb_inc(1);
         let _ = entered;
     })
 }
