@@ -32,8 +32,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: cli
-          path: target/release/docker-repack*
+          path: target/lto/docker-repack*
           retention-days: 1
+          if-no-files-found: error
 
   repack-image:
     runs-on: ubuntu-latest
