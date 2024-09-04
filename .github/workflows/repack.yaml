@@ -104,4 +104,4 @@ jobs:
         run: ./docker-repack docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-original repacked/ --target-size=${{ matrix.type }}
 
       - name: Copy repacked
-        run: skopeo copy --all --imagke-parallel-copies=10 oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-${{ matrix.type }}"
+        run: skopeo copy --all --image-parallel-copies=10 oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target_image }}-repacked-${{ matrix.type }}"
