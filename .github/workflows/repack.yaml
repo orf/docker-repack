@@ -51,6 +51,7 @@ jobs:
         env:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"
+          RUSTFLAGS: '-C target-cpu=native'
 
       - name: install skopeo
         uses: jaxxstorm/action-install-gh-release@v1
