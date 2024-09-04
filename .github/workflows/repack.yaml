@@ -16,8 +16,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-on-failure: 'false'
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Build
+        run: cargo build --profile=release
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: "sccache"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli
+          path: target/release/docker-repack*
+          retention-days: 1
+
   repack-image:
     runs-on: ubuntu-latest
+    needs: build
     permissions:
       contents: read
       packages: write
@@ -25,6 +48,12 @@ jobs:
       id-token: write
 
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli
+
+      - run: ./docker-repack --version
+
       - name: Disk space before
         run: df -h
       - name: Maximize build space
@@ -38,21 +67,6 @@ jobs:
           wait
       - name: Disk space after
         run: df -h
-      - uses: actions/checkout@v4
-
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          cache-on-failure: 'false'
-
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.5
-
-      - name: Build
-        run: cargo install --profile=release --path=. --locked
-        env:
-          SCCACHE_GHA_ENABLED: "true"
-          RUSTC_WRAPPER: "sccache"
-          #RUSTFLAGS: '-C target-cpu=native'
 
       - name: install skopeo
         uses: jaxxstorm/action-install-gh-release@v1
@@ -61,17 +75,6 @@ jobs:
           tag: v1.16.1
           cache: enable
           extension-matching: "disable"
-
-      - name: Cache Image
-        id: cache-image
-        uses: actions/cache@v4
-        with:
-          path: image/
-          key: nvidia-cuda-image
-
-#      - name: Download image
-#        if: steps.cache-image.outputs.cache-hit != 'true'
-#        run: skopeo copy docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 oci:image
 
       - name: Repack image
         run: docker-repack docker://nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04 repacked/ --target-size=${{ env.TARGET_SIZE }}
@@ -84,7 +87,3 @@ jobs:
 
       - name: Copy repacked
         run: skopeo copy oci:repacked/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.TARGET_IMAGE }}-repacked"
-
-#      - name: Copy original zstd
-#        run: skopeo copy oci:image/ "docker://${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.TARGET_IMAGE }}-zstd"
-
