@@ -3,6 +3,10 @@ name = "docker-repack"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
+description = "Repack Docker images for faster pull speeds"
+license = "MIT"
+repository = "https://github.com/orf/docker-repack/"
+
 
 [dependencies]
 tracing = { version = "0.1.40", features = ["release_max_level_debug", "max_level_trace"] }
