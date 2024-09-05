@@ -13,14 +13,14 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tracing-indicatif = "0.3.6"
 memmap2 = "0.9.4"
 strum = { version = "0.26.3", features = ["derive"] }
-memchr = { version = "2.7.4", default-features = false, features = ["std"] }
+memchr = { version = "2.7.4", default-features = false }
 anyhow = "1.0.86"
 zstd = { version = "0.13.2" }
 tar = { version = "0.4.41", default-features = false }
 itertools = "0.13.0"
 flate2 = "1.0.33"
 byte-unit = { version = "5.1.4" }
-sha2 = { version = "0.10.8", features = ["asm"] }
+sha2 = { version = "0.10.8" }
 oci-spec = { version = "0.6.8", default-features = false, features = ["image"] }
 serde_json = { version = "1.0.128", default-features = false }
 const-hex = { version = "1.12.0", default-features = false }
@@ -34,11 +34,11 @@ docker_credential = "1.3.1"
 tokio-util = { version = "0.7.12", features = ["full"] }
 clap = { version = "4.5.16", features = ["derive"] }
 shadow-rs = "0.33.0"
-rand = "0.8.5"
+rand = {version = "0.8.5", default-features = false, features = ["small_rng", "getrandom", "min_const_gen"]}
 
 [features]
-default = []
-perf = ["build-zstd", "tracing/release_max_level_warn", "flate2/zlib-ng", "sha2/asm", "zstd-experimental"]
+default = ["perf"]
+perf = ["build-zstd", "tracing/release_max_level_info", "flate2/zlib-ng", "sha2/asm", "zstd-experimental"]
 build-zstd = ["zstd/bindgen", "zstd/fat-lto"]
 zstd-experimental = ["zstd/experimental"]
 

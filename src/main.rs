@@ -229,7 +229,8 @@ fn handle_input_images<T: InputImage>(
 
     // Shuffle the layers to avoid any bias in the order of the layers
     // We re-sort the layers in write_oci_image
-    flattened_layers.shuffle(&mut thread_rng());
+    let mut small_rng = SmallRng::from_entropy();
+    flattened_layers.shuffle(&mut small_rng);
 
     info!("Produced {} total layers", flattened_layers.len());
 
