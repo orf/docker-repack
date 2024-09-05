@@ -7,7 +7,7 @@ inputs:
     required: true
   source:
     required: false
-    default: 'oci://original/'
+    default: 'original/'
   output:
     required: false
     default: 'repacked'
