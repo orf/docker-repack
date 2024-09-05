@@ -54,7 +54,6 @@ jobs:
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
       - name: Run Benchmark
-        shell: zsh
         run: |
           TAG="$(echo "${{ matrix.upstream_image }}" | tr '/' '-' | tr ':' '-')-${{ matrix.tag }}"
           echo $TAG
