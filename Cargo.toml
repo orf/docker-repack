@@ -39,7 +39,7 @@ rand = {version = "0.8.5", default-features = false, features = ["small_rng", "g
 [features]
 default = ["perf"]
 perf = ["build-zstd", "tracing/release_max_level_info", "flate2/zlib-ng", "sha2/asm", "zstd-experimental"]
-build-zstd = ["zstd/bindgen", "zstd/fat-lto"]
+build-zstd = ["zstd/fat-lto"]
 zstd-experimental = ["zstd/experimental"]
 
 [profile.lto]
