@@ -1,0 +1,41 @@
+name: 'Repack Image Benchmark'
+description: 'Repack an image for benchmarking'
+inputs:
+  target-size:
+    required: true
+  source:
+    required: false
+    default: 'oci://original/'
+  output:
+    required: false
+    default: 'repacked'
+  image-push-prefix:
+    required: true
+outputs:
+  image-reference:
+    description: "pushed image reference"
+    value: ${{ steps.push.outputs.image-reference }}
+runs:
+  using: "composite"
+  steps:
+    - name: Repack
+      id: repack
+      run: |
+        ./docker-repack "oci://${{ inputs.source }}" ${{ env.OUTPUT_DIR }} --target-size="${{ inputs.target-size }}"
+        echo "output-dir=${{ env.OUTPUT_DIR }}" >> $GITHUB_OUTPUT
+      shell: bash
+      env:
+        OUTPUT_DIR: "${{ inputs.output }}/${{ inputs.target-size }}/"
+
+    - name: Push image
+      id: push
+      run: |
+        skopeo copy --all --image-parallel-copies=10 oci:${{ steps.repack.outputs.output-dir }} "docker://${{ env.IMAGE_REFERENCE }}"
+        echo "image-reference=${{ env.IMAGE_REFERENCE }}" >> $GITHUB_OUTPUT
+      shell: bash
+      env:
+        IMAGE_REFERENCE: "${{ inputs.image-push-prefix }}-repacked-${{ inputs.target-size}}"
+
+    - name: Cleanup
+      run: rm -rf "${{ steps.repack.outputs.output-dir }}"
+      shell: bash
