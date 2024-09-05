@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
+    inputs:
+      repack-image:
+        description: 'Repack images'
+        default: false
+        required: true
+        type: boolean
   push:
     branches:
       - main
@@ -48,9 +54,17 @@ jobs:
         id: matrix
         run: |
           echo "upstream_images=$(cat benchmark/sources.json | jq -rc '.upstream_images')" >> "$GITHUB_OUTPUT"
+  
+  run-benchmark:
+    runs-on: ubuntu-latest
+    needs: [build, repack-image]
+    if: needs.build.result == 'success'
+    steps:
+      - run: echo hello world
 
   repack-image:
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || inputs.repack-image
     needs: [ build ]
     permissions:
       contents: read
