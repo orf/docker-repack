@@ -43,7 +43,7 @@ jobs:
       - name: Output matrix
         id: matrix
         run: |
-          echo "images=$(cat benchmark/sources.json | jq -rc '[.upstream_images[] | sub(":|/"; "-")] | join(",")')" >> "$GITHUB_OUTPUT"
+          echo "images=$(cat benchmark/sources.json | jq -rc '[.upstream_images[] | sub(":"; "-") | sub("/"; "-")] | join(",")')" >> "$GITHUB_OUTPUT"
 
       - name: Run Benchmark
         run: >-
@@ -56,7 +56,8 @@ jobs:
             --runs="${{ env.RUNS }}" --export-json=results.json --shell=none
         env:
           tag_prefix: "ghcr.io/${{ github.repository }}/docker-repack-demo"
-          tags: original,25MB,50MB,100MB,200MB
+          tags: original,zstd,25MB,50MB,100MB,200MB
+#          tags: original,zstd,25MB,50MB,100MB,200MB,500MB
 
       - uses: actions/upload-artifact@v4
         with:
