@@ -101,6 +101,19 @@ jobs:
       - name: Download original - Docker
         run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.upstream_image }} oci:original
 
+      - name: Compress with zstd
+        run: skopeo copy --all --image-parallel-copies=10 oci:original dir:original-zstd --dest-compress --dest-compress-format=zstd
+
+      - name: Push zstd image
+        id: push-zstd
+        uses: ./.github/actions/push-image
+        with:
+          upstream-image: ${{ matrix.upstream_image }}
+          tag-suffix: '-zstd'
+          source: 'dir:original-zstd/'
+
+      - run: rm -rf original-zstd/
+
       - name: "Skopeo authenticate ghcr.io"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
 

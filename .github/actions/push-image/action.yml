@@ -31,7 +31,7 @@ runs:
     - name: Push image - ghcr.io
       id: push-ghcr
       run: |
-        skopeo copy --all --image-parallel-copies=10 --retry-times=3 oci:${{ inputs.source }} "docker://${{ env.IMAGE_REFERENCE }}"
+        skopeo copy --all --image-parallel-copies=10 --retry-times=3 ${{ inputs.source }} "docker://${{ env.IMAGE_REFERENCE }}"
         echo "image-reference=${{ env.IMAGE_REFERENCE }}" >> $GITHUB_OUTPUT
       shell: bash
       env:
@@ -40,7 +40,7 @@ runs:
     - name: Push image - docker.io
       id: push-dockerhub
       run: |
-        skopeo copy --all --image-parallel-copies=10 --retry-times=3 oci:${{ inputs.source }} "docker://${{ env.IMAGE_REFERENCE }}"
+        skopeo copy --all --image-parallel-copies=10 --retry-times=3 ${{ inputs.source }} "docker://${{ env.IMAGE_REFERENCE }}"
         echo "image-reference=${{ env.IMAGE_REFERENCE }}" >> $GITHUB_OUTPUT
       shell: bash
       env:

@@ -33,7 +33,7 @@ runs:
       uses: ./.github/actions/push-image
       with:
         upstream-image: '${{ inputs.upstream-image }}'
-        source: '${{ steps.repack.outputs.output-dir }}'
+        source: 'oci:${{ steps.repack.outputs.output-dir }}'
         tag-suffix: '-${{ inputs.target-size }}'
 
     - name: Cleanup
