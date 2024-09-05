@@ -57,7 +57,7 @@ struct Args {
     #[arg(long)]
     keep_temp_files: bool,
 
-    #[arg(long, default_value = "9")]
+    #[arg(long, default_value = "14")]
     compression_level: i32,
 }
 
