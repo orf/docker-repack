@@ -21,7 +21,7 @@ runs:
     - name: Compute tag
       id: compute-tag
       run: |
-        TAG="$(echo "${{ inputs.upstream-image }}" | tr '/' '-' | tr ':' '-')-${{ inputs.tag-suffix }}"
+        TAG="$(echo "${{ inputs.upstream-image }}" | tr '/' '-' | tr ':' '-')${{ inputs.tag-suffix }}"
         echo "Computed tag: ${TAG}"
         echo "Upstream image: ${{ inputs.upstream-image }}"
         echo "Suffix: ${{ inputs.tag-suffix }}"
