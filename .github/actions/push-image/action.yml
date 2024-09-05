@@ -20,7 +20,12 @@ runs:
   steps:
     - name: Compute tag
       id: compute-tag
-      run: echo "tag=$(echo "${{ inputs.upstream-image }}" | tr '/' '-' | tr ':' '-')-${{ inputs.tag-suffix }}" >> $GITHUB_OUTPUT
+      run: |
+        TAG="$(echo "${{ inputs.upstream-image }}" | tr '/' '-' | tr ':' '-')-${{ inputs.tag-suffix }}"
+        echo "Computed tag: ${TAG}:"
+        echo "Upstream image: ${{ inputs.upstream-image }}"
+        echo "Suffix: ${{ inputs.tag-suffix }}"
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Push image - ghcr.io

@@ -112,7 +112,7 @@ jobs:
         id: push-original
         uses: ./.github/actions/push-image
         with:
-          upstream-image: '${{ matrix.upstream-image }}'
+          upstream-image: ${{ matrix.upstream_image }}
           tag-suffix: 'original'
           source: 'original/'
 
