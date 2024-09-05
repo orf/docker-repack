@@ -35,7 +35,10 @@ jobs:
       max-parallel: 4
       matrix:
         upstream_image: ${{ fromJSON(needs.build-matrix.outputs.upstream_images) }}
-        tag: ['original', 'repacked-25MB', 'repacked-50MB', 'repacked-100MB', 'repacked-200MB']
+        tag: [ 'original', 'repacked-25MB', 'repacked-50MB', 'repacked-100MB', 'repacked-200MB' ]
+
+    env:
+      RUNS: 20
 
     steps:
       - name: install skopeo
@@ -54,10 +57,22 @@ jobs:
       - name: "Skopeo authenticate ghcr.io"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
-      - name: Run Benchmark
+      - id: tag
         run: |
           TAG="$(echo "${{ matrix.upstream_image }}" | tr '/' '-' | tr ':' '-')-${{ matrix.tag }}"
-          echo $TAG
-          skopeo copy --image-parallel-copies=10 "docker://${{ env.REPO }}:${TAG}" oci:/dev/shm/image
+          echo "Tag: ${TAG}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Run Benchmark
+        run: >-
+          hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.TAG }} oci:/dev/shm/image"
+            --runs="${{ env.RUNS }}" --export-json=results.json --shell=none
         env:
-          REPO: ghcr.io/${{ github.repository }}/docker-repack-demo
+          TAG: ghcr.io/${{ github.repository }}/docker-repack-demo:${{ steps.tag.outputs.tag }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ matrix.upstream_image }}-${{ matrix.tag }}
+          path: results.json
+          retention-days: 1
+          if-no-files-found: error
