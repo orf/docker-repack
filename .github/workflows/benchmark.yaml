@@ -109,7 +109,7 @@ jobs:
         run: |
           skopeo copy --all --image-parallel-copies=10 oci:original "docker://${{ env.IMAGE_DESTINATION_PREFIX }}-original"
 
-      - id: 25mb
+      - id: test-25mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '25MB'
