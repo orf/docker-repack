@@ -45,7 +45,6 @@ zstd-experimental = ["zstd/experimental"]
 inherits = "release"
 lto = true
 codegen-units = 1
-debug = "line-directives-only"
 panic = "abort"
 
 [profile.flamegraph]

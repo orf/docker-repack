@@ -22,7 +22,7 @@ runs:
       id: compute-tag
       run: |
         TAG="$(echo "${{ inputs.upstream-image }}" | tr '/' '-' | tr ':' '-')-${{ inputs.tag-suffix }}"
-        echo "Computed tag: ${TAG}:"
+        echo "Computed tag: ${TAG}"
         echo "Upstream image: ${{ inputs.upstream-image }}"
         echo "Suffix: ${{ inputs.tag-suffix }}"
         echo "tag=${TAG}" >> $GITHUB_OUTPUT
