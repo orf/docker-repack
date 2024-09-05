@@ -159,3 +159,11 @@ jobs:
           target-size: '200MB'
           upstream-image: '${{ matrix.upstream_image }}'
           source: 'original/'
+
+      - name: repack-500mb
+        id: repack-500mb
+        uses: ./.github/actions/repack-image-benchmark
+        with:
+          target-size: '500MB'
+          upstream-image: '${{ matrix.upstream_image }}'
+          source: 'original/'
