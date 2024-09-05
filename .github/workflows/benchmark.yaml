@@ -64,8 +64,7 @@ jobs:
 
     env:
       REGISTRY: ghcr.io
-      IMAGE_PREFIX: ${{ github.repository }}/demo
-      IMAGE_DESTINATION_PREFIX: "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.upstream_image }}"
+      IMAGE_DESTINATION_PREFIX: "ghcr.io/${{ github.repository }}/demo/${{ matrix.upstream_image }}"
 
     steps:
       - uses: actions/download-artifact@v4
