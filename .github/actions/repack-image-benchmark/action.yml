@@ -11,8 +11,6 @@ inputs:
   output:
     required: false
     default: 'repacked'
-  image-push-prefix:
-    required: true
 outputs:
   image-reference-ghcr:
     description: "pushed image reference - ghcr"
