@@ -1,0 +1,149 @@
+name: Benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      upstream_images: ${{ steps.matrix.outputs.upstream_images }}
+
+    env:
+      build-profile: 'lto'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-on-failure: 'false'
+          rustflags: '-C target-cpu=native'
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Build
+        run: cargo build --profile=${{ env.build-profile }} -F perf
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: "sccache"
+
+      - run: du -hs target/${{ env.build-profile }}/docker-repack
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli
+          path: target/${{ env.build-profile }}/docker-repack*
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Output matrix
+        id: matrix
+        run: |
+          echo "upstream_images=$(cat benchmark/sources.json | jq -rc '.upstream_images')" >> "$GITHUB_OUTPUT"
+
+  repack-image:
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        upstream_image: ${{ fromJSON(needs.build.outputs.upstream_images) }}
+
+    concurrency:
+      group: "push-${{ matrix.upstream_image }}"
+      cancel-in-progress: false
+
+    steps:
+      # Needed for the custom action
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli
+
+      - run: chmod +x docker-repack
+      - run: ./docker-repack --version
+
+      - name: Disk space before
+        run: df -h
+
+      - name: Maximize build space
+        shell: bash
+        run: |
+          sudo rm -rf /usr/share/dotnet/* &
+          sudo rm -rf /usr/local/lib/android/* &
+      - name: Disk space after
+        run: df -h
+
+      - name: install skopeo
+        uses: jaxxstorm/action-install-gh-release@v1
+        with:
+          repo: lework/skopeo-binary
+          tag: v1.16.1
+          cache: true
+          extension-matching: disable
+          rename-to: skopeo
+          chmod: 0755
+
+      - name: skopeo version
+        run: skopeo --version
+
+      - name: Download original - Docker
+        run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.upstream_image }} oci:original
+
+      - name: "Skopeo authenticate ghcr.io"
+        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
+
+      - name: "Skopeo authenticate dockerhub"
+        run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
+
+      - name: Push Original image
+        id: push-original
+        uses: ./.github/actions/push-image
+        with:
+          upstream-image: ${{ matrix.upstream_image }}
+          tag-suffix: '-original'
+          source: 'original/'
+
+      - name: Repack 25mb
+        id: repack-25mb
+        uses: ./.github/actions/repack-image-benchmark
+        with:
+          target-size: '25MB'
+          upstream-image: '${{ matrix.upstream_image }}'
+          source: 'original/'
+
+      - name: repack-50mb
+        id: repack-50mb
+        uses: ./.github/actions/repack-image-benchmark
+        with:
+          target-size: '50MB'
+          upstream-image: '${{ matrix.upstream_image }}'
+          source: 'original/'
+
+      - name: repack-100mb
+        id: repack-100mb
+        uses: ./.github/actions/repack-image-benchmark
+        with:
+          target-size: '100MB'
+          upstream-image: '${{ matrix.upstream_image }}'
+          source: 'original/'
+
+      - name: repack-200mb
+        id: repack-200mb
+        uses: ./.github/actions/repack-image-benchmark
+        with:
+          target-size: '200MB'
+          upstream-image: '${{ matrix.upstream_image }}'
+          source: 'original/'
