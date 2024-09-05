@@ -20,7 +20,7 @@ tar = { version = "0.4.41", default-features = false }
 itertools = "0.13.0"
 flate2 = "1.0.33"
 byte-unit = { version = "5.1.4" }
-sha2 = { version = "0.10.8" }
+sha2 = { version = "0.10.8", features = ["asm"] }
 oci-spec = { version = "0.6.8", default-features = false, features = ["image"] }
 serde_json = { version = "1.0.127", default-features = false }
 const-hex = { version = "1.12.0", default-features = false }
