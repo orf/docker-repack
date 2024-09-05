@@ -101,14 +101,14 @@ jobs:
       - name: skopeo version
         run: skopeo --version
 
+      - name: Download original - Docker
+        run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.upstream_image }} oci:original
+
       - name: "Skopeo authenticate ghcr.io"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
       - name: "Skopeo authenticate dockerhub"
         run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
-
-      - name: Download original - Docker
-        run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.upstream_image }} oci:original
 
       - name: Push Original image
         id: push-original
