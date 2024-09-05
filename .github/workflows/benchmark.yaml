@@ -69,7 +69,7 @@ jobs:
 
       - name: Run Benchmark
         run: >-
-          hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.TAG }} oci:/dev/shm/image"
+          hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.TAG }} oci:/dev/shm/image" \
             --runs="${{ env.RUNS }}" --export-json=results.json --shell=none
         env:
           TAG: ghcr.io/${{ github.repository }}/docker-repack-demo:${{ steps.tag.outputs.tag }}
