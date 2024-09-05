@@ -72,7 +72,7 @@ jobs:
           hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.tag_prefix }}-{suffix} oci:/dev/shm/image" \
             -L suffix ${{ env.tags }} \
             --prepare "rm -rf /dev/shm/image/" \
-            --runs="${{ env.RUNS }}" --export-json=results.json --shell=none
+            --runs="${{ env.RUNS }}" --export-json=results.json --shell=none --show-output
         env:
           tag_prefix: ghcr.io/${{ github.repository }}/docker-repack-demo:${{ steps.tag.outputs.tag }}
           tags: original,zstd,25MB,50MB,100MB,200MB
