@@ -19,6 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - run: sudo apt-get update && sudo apt-get install libzstd-dev -y
+
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           cache-on-failure: 'false'
@@ -28,7 +30,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.5
 
       - name: Build
-        run: cargo build --profile=${{ env.build-profile }}
+        run: cargo build --profile=${{ env.build-profile }} -F perf
         env:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"

@@ -36,6 +36,12 @@ clap = { version = "4.5.16", features = ["derive"] }
 shadow-rs = "0.33.0"
 rand = "0.8.5"
 
+[features]
+default = []
+perf = ["build-zstd", "tracing/release_max_level_warn"]
+build-zstd = ["zstd/bindgen", "zstd/thin", "zstd/thin-lto", "zstd/pkg-config"]
+
+
 [profile.lto]
 inherits = "release"
 lto = true
