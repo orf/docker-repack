@@ -1,12 +1,12 @@
 name: 'Push image'
 description: 'Push an image to Dockerhub and GHCR'
 inputs:
-  oci-directory:
+  source:
     required: true
   upstream-image:
     required: true
-  suffix:
-    requred: true
+  tag-suffix:
+    required: true
 
 outputs:
   image-reference-ghcr:
@@ -20,13 +20,13 @@ runs:
   steps:
     - name: Compute tag
       id: compute-tag
-      run: echo "tag=$(echo "${{ inputs.upstream-image }}" | tr '/' '-' | tr ':' '-')-${{ inputs.suffix }}" >> $GITHUB_OUTPUT
+      run: echo "tag=$(echo "${{ inputs.upstream-image }}" | tr '/' '-' | tr ':' '-')-${{ inputs.tag-suffix }}" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Push image - ghcr.io
       id: push-ghcr
       run: |
-        skopeo copy --all --image-parallel-copies=10 oci:${{ inputs.oci-directory }} "docker://${{ env.IMAGE_REFERENCE }}"
+        skopeo copy --all --image-parallel-copies=10 oci:${{ inputs.source }} "docker://${{ env.IMAGE_REFERENCE }}"
         echo "image-reference=${{ env.IMAGE_REFERENCE }}" >> $GITHUB_OUTPUT
       shell: bash
       env:
@@ -35,7 +35,7 @@ runs:
     - name: Push image - docker.io
       id: push-dockerhub
       run: |
-        skopeo copy --all --image-parallel-copies=10 oci:${{ inputs.oci-directory }} "docker://${{ env.IMAGE_REFERENCE }}"
+        skopeo copy --all --image-parallel-copies=10 oci:${{ inputs.source }} "docker://${{ env.IMAGE_REFERENCE }}"
         echo "image-reference=${{ env.IMAGE_REFERENCE }}" >> $GITHUB_OUTPUT
       shell: bash
       env:

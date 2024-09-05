@@ -6,8 +6,7 @@ inputs:
   target-size:
     required: true
   source:
-    required: false
-    default: 'original/'
+    required: true
   output:
     required: false
     default: 'repacked'
@@ -34,7 +33,8 @@ runs:
       uses: ./.github/actions/push-image
       with:
         upstream-image: '${{ inputs.upstream-image }}'
-        oci-directory: '${{ steps.repack.outputs.output-dir }}'
+        source: '${{ steps.repack.outputs.output-dir }}'
+        tag-suffix: '-repacked-${{ inputs.target-size }}'
 
     - name: Cleanup
       run: rm -rf "${{ steps.repack.outputs.output-dir }}"

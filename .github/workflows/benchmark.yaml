@@ -80,7 +80,6 @@ jobs:
         run: |
           sudo rm -rf /usr/share/dotnet/* &
           sudo rm -rf /usr/local/lib/android/* &
-          wait
       - name: Disk space after
         run: df -h
 
@@ -110,31 +109,36 @@ jobs:
         uses: ./.github/actions/push-image
         with:
           upstream-image: '${{ inputs.upstream-image }}'
-          oci-directory: 'original'
+          tag-suffix: 'original'
+          source: 'original/'
 
       - id: repack-25mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '25MB'
           upstream-image: '${{ matrix.upstream_image }}'
+          source: 'original/'
 
       - id: repack-50mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '50MB'
           upstream-image: '${{ matrix.upstream_image }}'
+          source: 'original/'
 
       - id: repack-100mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '100MB'
           upstream-image: '${{ matrix.upstream_image }}'
+          source: 'original/'
 
       - id: repack-200mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '200MB'
           upstream-image: '${{ matrix.upstream_image }}'
+          source: 'original/'
 
 
 #      - uses: actions/upload-artifact@v4
