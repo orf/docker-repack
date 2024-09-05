@@ -75,7 +75,7 @@ jobs:
             --runs="${{ env.RUNS }}" --export-json=results.json --shell=none --show-output
         env:
           tag_prefix: ghcr.io/${{ github.repository }}/docker-repack-demo:${{ steps.tag.outputs.tag }}
-          tags: original,zstd,25MB,50MB,100MB,200MB
+          tags: original,25MB,50MB,100MB,200MB
 
       - uses: actions/upload-artifact@v4
         with:
