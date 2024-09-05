@@ -67,6 +67,8 @@ jobs:
       IMAGE_DESTINATION_PREFIX: "ghcr.io/${{ github.repository }}/demo/${{ matrix.upstream_image }}"
 
     steps:
+      # Needed for the custom action
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: cli
@@ -109,37 +111,30 @@ jobs:
         run: |
           skopeo copy --all --image-parallel-copies=10 oci:original "docker://${{ env.IMAGE_DESTINATION_PREFIX }}-original"
 
-      - id: test-25mb
+      - id: repack-25mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '25MB'
           image-push-prefix: ${{ env.IMAGE_DESTINATION_PREFIX }}
-#
-#      - name: 25mb repack
-#        run: |
-#          ./docker-repack oci://original/ repacked/25/ --target-size=25MB
-#          skopeo copy --all --image-parallel-copies=10 oci:repacked/25/ "docker://${{ env.IMAGE_DESTINATION_PREFIX }}-repacked-25mb"
-#          rm -rf repacked/25/
-#
-#      - name: 50mb repack
-#        run: |
-#          ./docker-repack oci://original/ repacked/50/ --target-size=50MB
-#          skopeo copy --all --image-parallel-copies=10 oci:repacked/50/ "docker://${{ env.IMAGE_DESTINATION_PREFIX }}-repacked-50mb"
-#          rm -rf repacked/50/
-#
-#      - name: 100mb repack
-#        run: |
-#          ./docker-repack oci://original/ repacked/100/ --target-size=100MB
-#          skopeo copy --all --image-parallel-copies=10 oci:repacked/100/ "docker://${{ env.IMAGE_DESTINATION_PREFIX }}-repacked-100mb"
-#          rm -rf repacked/100/
-#
-#      - name: 200mb repack
-#        run: |
-#          ./docker-repack oci://original/ repacked/200/ --target-size=200MB
-#          skopeo copy --all --image-parallel-copies=10 oci:repacked/200/ "docker://${{ env.IMAGE_DESTINATION_PREFIX }}-repacked-200mb"
-#          rm -rf repacked/200/
-#
-#
+
+      - id: repack-50mb
+        uses: ./.github/actions/repack-image-benchmark
+        with:
+          target-size: '50MB'
+          image-push-prefix: ${{ env.IMAGE_DESTINATION_PREFIX }}
+
+      - id: repack-100mb
+        uses: ./.github/actions/repack-image-benchmark
+        with:
+          target-size: '100MB'
+          image-push-prefix: ${{ env.IMAGE_DESTINATION_PREFIX }}
+
+      - id: repack-200mb
+        uses: ./.github/actions/repack-image-benchmark
+        with:
+          target-size: '200MB'
+          image-push-prefix: ${{ env.IMAGE_DESTINATION_PREFIX }}
+
 
 #      - uses: actions/upload-artifact@v4
 #        with:
