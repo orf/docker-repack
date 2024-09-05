@@ -35,7 +35,7 @@ jobs:
       max-parallel: 4
       matrix:
         upstream_image: ${{ fromJSON(needs.build-matrix.outputs.upstream_images) }}
-        tag: [ 'original', 'repacked-25MB', 'repacked-50MB', 'repacked-100MB', 'repacked-200MB' ]
+        #tag: [ 'original', 'repacked-25MB', 'repacked-50MB', 'repacked-100MB', 'repacked-200MB' ]
 
     env:
       RUNS: 20
@@ -63,17 +63,19 @@ jobs:
 
       - id: tag
         run: |
-          TAG="$(echo "${{ matrix.upstream_image }}" | tr '/' '-' | tr ':' '-')-${{ matrix.tag }}"
+          TAG="$(echo "${{ matrix.upstream_image }}" | tr '/' '-' | tr ':' '-')"
           echo "Tag: ${TAG}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Run Benchmark
         run: >-
-          hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.TAG }} oci:/dev/shm/image" \
+          hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.tag_prefix }}-{suffix} oci:/dev/shm/image" \
+            -L suffix ${{ env.tags }} \
             --prepare "rm -rf /dev/shm/image/" \
             --runs="${{ env.RUNS }}" --export-json=results.json --shell=none
         env:
-          TAG: ghcr.io/${{ github.repository }}/docker-repack-demo:${{ steps.tag.outputs.tag }}
+          tag_prefix: ghcr.io/${{ github.repository }}/docker-repack-demo:${{ steps.tag.outputs.tag }}
+          tags: original,zstd,25MB,50MB,100MB,200MB
 
       - uses: actions/upload-artifact@v4
         with:
