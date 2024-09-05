@@ -15,7 +15,7 @@ memmap2 = "0.9.4"
 strum = { version = "0.26.3", features = ["derive"] }
 memchr = { version = "2.7.4", default-features = false, features = ["std"] }
 anyhow = "1.0.86"
-zstd = { version = "0.13.2", features = ["experimental"] }
+zstd = { version = "0.13.2" }
 tar = { version = "0.4.41", default-features = false }
 itertools = "0.13.0"
 flate2 = "1.0.33"
@@ -40,7 +40,7 @@ rand = "0.8.5"
 default = []
 perf = ["build-zstd", "tracing/release_max_level_warn", "flate2/zlib-ng"]
 build-zstd = ["zstd/bindgen", "zstd/thin", "zstd/thin-lto", "zstd/pkg-config"]
-
+zstd-experimental = ["zstd/experimental"]
 
 [profile.lto]
 inherits = "release"
