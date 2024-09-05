@@ -95,7 +95,7 @@ impl<'a> ImageItem<'a> {
             let header_size =
                 unsafe { zstd_safe::zstd_sys::ZSTD_frameHeaderSize(compressed.as_ptr() as *const _, compressed.len()) };
             #[cfg(not(feature = "zstd-experimental"))]
-            let header_size = 0;
+            let header_size = 4;
             let compressed_size = (compressed.len() - header_size) as u64;
             let hash = sha2::Sha256::digest(content).into();
             (compressed_size, hash)

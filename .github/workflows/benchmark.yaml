@@ -1,6 +1,8 @@
 name: Benchmark
 
 on:
+  schedule:
+    - cron: ''
   workflow_dispatch:
   push:
     branches:
@@ -14,7 +16,7 @@ jobs:
       upstream_images: ${{ steps.matrix.outputs.upstream_images }}
 
     env:
-      build-profile: 'release'
+      build-profile: 'lto'
 
     steps:
       - uses: actions/checkout@v4
