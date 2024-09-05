@@ -37,9 +37,8 @@ shadow-rs = "0.33.0"
 rand = {version = "0.8.5", default-features = false, features = ["small_rng", "getrandom", "min_const_gen"]}
 
 [features]
-default = ["perf"]
-perf = ["build-zstd", "tracing/release_max_level_info", "flate2/zlib-ng", "sha2/asm", "zstd-experimental"]
-build-zstd = ["zstd/fat-lto"]
+default = ["perf", "zstd-experimental"]
+perf = ["tracing/release_max_level_info", "flate2/zlib-ng", "sha2/asm", "zstd/arrays"]
 zstd-experimental = ["zstd/experimental"]
 
 [profile.lto]
