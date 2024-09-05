@@ -126,7 +126,7 @@ jobs:
         with:
           upstream-image: ${{ matrix.upstream_image }}
           tag-suffix: '-original'
-          source: 'original/'
+          source: 'oci:original/'
 
       - name: Repack 25mb
         id: repack-25mb
