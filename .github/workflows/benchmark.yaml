@@ -63,7 +63,6 @@ jobs:
       cancel-in-progress: false
 
     env:
-      REGISTRY: ghcr.io
       IMAGE_DESTINATION_PREFIX: "ghcr.io/${{ github.repository }}/demo/${{ matrix.upstream_image }}"
 
     steps:
@@ -101,8 +100,11 @@ jobs:
       - name: skopeo version
         run: skopeo --version
 
-      - name: "Skopeo authenticate"
-        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+      - name: "Skopeo authenticate ghcr.io"
+        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
+
+      - name: "Skopeo authenticate dockerhub"
+        run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
 
       - name: Copy original - Docker
         run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.upstream_image }} oci:original
@@ -111,29 +113,37 @@ jobs:
         run: |
           skopeo copy --all --image-parallel-copies=10 oci:original "docker://${{ env.IMAGE_DESTINATION_PREFIX }}-original"
 
+      - name: Push original - docker.io
+        run: |
+          skopeo copy --all --image-parallel-copies=10 oci:original "docker://${{ env.IMAGE_DESTINATION_PREFIX }}-original"
+
       - id: repack-25mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '25MB'
           image-push-prefix: ${{ env.IMAGE_DESTINATION_PREFIX }}
+          upstream-image: '${{ matrix.upstream_image }}'
 
       - id: repack-50mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '50MB'
           image-push-prefix: ${{ env.IMAGE_DESTINATION_PREFIX }}
+          upstream-image: '${{ matrix.upstream_image }}'
 
       - id: repack-100mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '100MB'
           image-push-prefix: ${{ env.IMAGE_DESTINATION_PREFIX }}
+          upstream-image: '${{ matrix.upstream_image }}'
 
       - id: repack-200mb
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '200MB'
           image-push-prefix: ${{ env.IMAGE_DESTINATION_PREFIX }}
+          upstream-image: '${{ matrix.upstream_image }}'
 
 
 #      - uses: actions/upload-artifact@v4
