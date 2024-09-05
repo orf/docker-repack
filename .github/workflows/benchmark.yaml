@@ -30,7 +30,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.5
 
       - name: Build
-        run: cargo build --profile=${{ env.build-profile }} -F perf,lto
+        run: cargo build --profile=${{ env.build-profile }} -F perf
         env:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"
