@@ -76,7 +76,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: results-${{ matrix.upstream_image }}-${{ matrix.tag }}
+          name: results-${{ steps.tag.outputs.tag }}
           path: results.json
           retention-days: 1
           if-no-files-found: error
