@@ -58,7 +58,7 @@ jobs:
   run-benchmark:
     runs-on: ubuntu-latest
     needs: [build, repack-image]
-    if: needs.build.result == 'success'
+    if: always()
     steps:
       - run: echo hello world
 
