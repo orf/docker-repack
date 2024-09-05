@@ -35,7 +35,8 @@ jobs:
       max-parallel: 4
       matrix:
         upstream_image: ${{ fromJSON(needs.build-matrix.outputs.upstream_images) }}
-        tag: ['original', '25MB', '50MB', '100MB', '200MB']
+#        tag: ['original', '25MB', '50MB', '100MB', '200MB']
+        tag: ['25MB', '50MB', '100MB', '200MB']
 
     steps:
       - name: install skopeo
@@ -61,3 +62,7 @@ jobs:
           skopeo copy --all --image-parallel-copies=10 --retry-times=3 "docker://${{ env.REPO }}:${TAG}" oci:/dev/shm/image
         env:
           REPO: ghcr.io/${{ github.repository }}/docker-repack-demo
+
+
+# ghcr.io/orf/docker-repack/docker-repack-demo:nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04--50MB
+# ghcr.io/orf/docker-repack/docker-repack-demo:nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04-50MB

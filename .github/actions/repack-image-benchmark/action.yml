@@ -34,7 +34,7 @@ runs:
       with:
         upstream-image: '${{ inputs.upstream-image }}'
         source: '${{ steps.repack.outputs.output-dir }}'
-        tag-suffix: '-repacked-${{ inputs.target-size }}'
+        tag-suffix: '-${{ inputs.target-size }}'
 
     - name: Cleanup
       run: rm -rf "${{ steps.repack.outputs.output-dir }}"
