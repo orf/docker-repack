@@ -13,6 +13,9 @@ jobs:
     outputs:
       upstream_images: ${{ steps.matrix.outputs.upstream_images }}
 
+    env:
+      build-profile: 'release'
+
     steps:
       - uses: actions/checkout@v4
 
@@ -25,17 +28,17 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.5
 
       - name: Build
-        run: cargo build --profile=release
+        run: cargo build --profile=${{ env.build-profile }}
         env:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"
 
-      - run: du -hs target/lto/docker-repack
+      - run: du -hs target/${{ env.build-profile }}/docker-repack
 
       - uses: actions/upload-artifact@v4
         with:
           name: cli
-          path: target/lto/docker-repack*
+          path: target/${{ env.build-profile }}/docker-repack*
           retention-days: 1
           if-no-files-found: error
 
@@ -144,11 +147,3 @@ jobs:
           target-size: '200MB'
           upstream-image: '${{ matrix.upstream_image }}'
           source: 'original/'
-
-
-#      - uses: actions/upload-artifact@v4
-#        with:
-#          name: cli
-#          path: target/lto/docker-repack*
-#          retention-days: 1
-#          if-no-files-found: error
