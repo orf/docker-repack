@@ -31,7 +31,8 @@ jobs:
       id-token: write
 
     strategy:
-      fail-fast: false
+      fail-fast: true
+      max-parallel: 4
       matrix:
         upstream_image: ${{ fromJSON(needs.build-matrix.outputs.upstream_images) }}
         tag: ['original', '25MB', '50MB', '100MB', '200MB']
