@@ -38,7 +38,7 @@ rand = "0.8.5"
 
 [features]
 default = []
-perf = ["build-zstd", "tracing/release_max_level_warn"]
+perf = ["build-zstd", "tracing/release_max_level_warn", "flate2/zlib-ng"]
 build-zstd = ["zstd/bindgen", "zstd/thin", "zstd/thin-lto", "zstd/pkg-config"]
 
 
