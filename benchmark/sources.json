@@ -12,6 +12,8 @@
     "bitnami/airflow-worker:2.10.1",
     "mathworks/matlab:r2024a",
     "google/deepvariant:b350512297c12-gpu",
+    "google/cloud-sdk:491.0.0",
+    "google/deepsomatic:1.7.0-gpu",
     "ollama/ollama:0.3.10"
   ]
 }
