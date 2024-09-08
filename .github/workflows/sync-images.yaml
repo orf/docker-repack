@@ -6,6 +6,15 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Output matrix
+        id: matrix
+        run: |
+          echo "upstream_images=$(cat benchmark/sources.json | jq -rc '.upstream_images')" >> "$GITHUB_OUTPUT"
+
   build:
     runs-on: ubuntu-latest
 
@@ -40,15 +49,10 @@ jobs:
           path: target/${{ env.build-profile }}/docker-repack*
           retention-days: 1
           if-no-files-found: error
-
-      - name: Output matrix
-        id: matrix
-        run: |
-          echo "upstream_images=$(cat benchmark/sources.json | jq -rc '.upstream_images')" >> "$GITHUB_OUTPUT"
   
   sync-original-images:
     runs-on: ubuntu-latest
-    needs: [ build ]
+    needs: [ matrix ]
 
     permissions:
       contents: read
@@ -59,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        upstream_image: ${{ fromJSON(needs.build.outputs.upstream_images) }}
+        upstream_image: ${{ fromJSON(needs.matrix.outputs.upstream_images) }}
 
     concurrency:
       group: "sync-${{ matrix.upstream_image }}"
@@ -118,7 +122,7 @@ jobs:
 
   repack-image:
     runs-on: ubuntu-latest
-    needs: [ sync-original-images ]
+    needs: [ sync-original-images, matrix, build ]
     permissions:
       contents: read
       packages: write
@@ -128,7 +132,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        upstream_image: ${{ fromJSON(needs.build.outputs.upstream_images) }}
+        upstream_image: ${{ fromJSON(needs.matrix.outputs.upstream_images) }}
         target_size: ['50MB', '100MB', '200MB', '500MB']
 
     concurrency:
