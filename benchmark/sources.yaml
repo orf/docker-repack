@@ -5,10 +5,10 @@ sizes:
   - '500MB'
 
 upstream_images:
-#  - upstream_image: "tensorflow/tensorflow:2.17.0-gpu"
-#    destination: "tensorflow-2.17.0-gpu"
-#  - upstream_image: "pytorch/pytorch:2.4.1-cuda11.8-cudnn9-devel"
-#    destination: "pytorch-2.4.1-cuda11.8-cudnn9-devel"
+  - upstream_image: "tensorflow/tensorflow:2.17.0-gpu"
+    destination: "tensorflow-2.17.0-gpu"
+  - upstream_image: "pytorch/pytorch:2.4.1-cuda11.8-cudnn9-devel"
+    destination: "pytorch-2.4.1-cuda11.8-cudnn9-devel"
   - upstream_image: "nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04"
     destination: "nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04"
   - upstream_image: "neo4j:enterprise"
