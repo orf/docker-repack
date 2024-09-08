@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      build-profile: 'lto'
+      build-profile: 'release'
 
     steps:
       - uses: actions/checkout@v4
