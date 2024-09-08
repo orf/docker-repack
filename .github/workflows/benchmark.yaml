@@ -38,7 +38,7 @@ jobs:
         image: ${{ fromJSON(needs.matrix.outputs.destinations) }}
 
     env:
-      RUNS: 1
+      RUNS: 50
 
     steps:
       - uses: actions/checkout@v4

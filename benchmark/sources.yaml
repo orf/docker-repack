@@ -1,7 +1,12 @@
 sizes:
+  - '25MB'
   - '50MB'
+  - '75MB'
   - '100MB'
+  - '150MB'
   - '200MB'
+  - '300MB'
+  - '400MB'
   - '500MB'
 
 upstream_images:
