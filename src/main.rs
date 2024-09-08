@@ -26,12 +26,12 @@ mod index;
 mod input;
 mod io_utils;
 mod layer_combiner;
+pub mod location;
 mod output_image;
 mod platform_matcher;
 mod progress;
 #[cfg(test)]
 mod test_utils;
-pub mod location;
 
 use crate::input::local_image::LocalOciImage;
 use crate::platform_matcher::PlatformMatcher;

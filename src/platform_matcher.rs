@@ -1,7 +1,7 @@
-use std::fmt::{Display, Formatter};
 use globset::{Glob, GlobBuilder, GlobMatcher};
 use oci_client::manifest::Platform as OciClientPlatform;
 use oci_spec::image::Platform;
+use std::fmt::{Display, Formatter};
 use tracing::{debug, instrument};
 
 #[derive(Debug)]
@@ -45,7 +45,7 @@ impl PlatformMatcher {
         Self::from_glob(glob).unwrap()
     }
 
-    #[instrument(level="debug")]
+    #[instrument(level = "debug")]
     pub fn matches_str(&self, os: &str, arch: &str, variant: &str) -> bool {
         let os = os.to_ascii_lowercase();
         let arch = arch.to_ascii_lowercase();
