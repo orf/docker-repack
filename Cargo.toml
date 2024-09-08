@@ -58,8 +58,8 @@ debug = true
 
 
 [dev-dependencies]
-shadow-rs = "0.33.0"
+shadow-rs = "0.34.0"
 test-log = { version = "0.2.16", features = ["color", "trace"] }
 
 [build-dependencies]
-shadow-rs = "0.33.0"
+shadow-rs = "0.34.0"
