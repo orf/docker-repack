@@ -287,7 +287,7 @@ fn load_and_merge_image(input_image: &impl InputImage, combined_path: &Path) -> 
         .create(true)
         .truncate(true)
         .write(true)
-        .open(&combined_path)
+        .open(combined_path)
         .with_context(|| format!("Opening file {combined_path:?}"))?;
     let mut combiner = LayerCombiner::new(combined_output_file);
     let layer_iterator = input_image.layers_from_manifest()?;

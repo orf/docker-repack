@@ -7,8 +7,8 @@ const fullData = await parseBenchmarkData();
 const dataset = fullData.images.sort((a, b) => b.times_faster - a.times_faster);
 ---
 
-<h1 class="text-2xl font-bold">Benchmarks</h1>
-<div class="columns-3">
+<h1 class="text-3xl font-bold mb-4">Image Benchmarks</h1>
+<div class="columns-3 mb-2">
   {
     dataset.map((image) => (
       <div>

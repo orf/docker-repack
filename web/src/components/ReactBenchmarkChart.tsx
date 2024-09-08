@@ -1,7 +1,6 @@
 import * as React from "react";
 import { BarChart } from "@mui/x-charts/BarChart";
 import type {
-  BenchmarkData,
   BenchmarkImage,
   BenchmarkImageTime,
 } from "../benchmark_parser.ts";
@@ -41,7 +40,9 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
 
   return (
     <>
-      <button onClick={() => setShowAll(!showAll)}>Show All</button>
+      <button onClick={() => setShowAll(!showAll)}>{
+        showAll ? "Show only fastest timing" : `Show all ${image.times.length} timings`
+      }</button>
       <BarChart
         dataset={data}
         xAxis={[{ scaleType: "band", dataKey: "image" }]}

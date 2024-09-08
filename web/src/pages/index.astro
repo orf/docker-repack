@@ -1,6 +1,40 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import PullComponent, {type Layer} from "../components/pull-component"
+import crypto from "crypto";
+
+function sha256Hash(message: string) {
+  return crypto.createHash('sha256').update(message).digest('hex');
+}
+
+function make_layer(idx: number, size_mb: number) : Layer {
+  return {bytes: size_mb * 1024 * 1024, digest: sha256Hash(idx.toString())}
+}
+
+const slowLayers = [
+  make_layer(1, 10),
+  make_layer(2, 1),
+  make_layer(3, 450),
+  make_layer(4, 100),
+  make_layer(5, 50),
+];
+
+const fastLayers = [
+  make_layer(1, 1),
+  make_layer(2, 70),
+  make_layer(3, 80),
+  make_layer(4, 70),
+  make_layer(5, 85),
+];
+
+const bandwidth = 1024 * 1024 * 10;
+const maxDownloads = 5;
 ---
 
 <Layout title="Welcome to Astro.">
+  <h1 class="text-3xl">Docker Repack</h1>
+  <p class="m-1">This:</p>
+  <PullComponent bandwidth={bandwidth} layers={slowLayers} max_downloads={maxDownloads} client:only/>
+  <p class="m-1">Turns into this:</p>
+  <PullComponent bandwidth={bandwidth} layers={fastLayers} max_downloads={maxDownloads} client:only/>
 </Layout>
