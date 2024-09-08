@@ -13,12 +13,12 @@ jobs:
       destination_images: ${{ steps.destinations.outputs.result }}
     steps:
       - uses: actions/checkout@v4
-      - name: matrix
+      - name: matrix all
         uses: mikefarah/yq@v4.44.3
         id: matrix
         with:
           cmd: yq -o=json '.upstream_images' 'benchmark/sources.yaml'
-      - name: yq - portable yaml processor
+      - name: matrix sources
         uses: mikefarah/yq@v4.44.3
         id: destinations
         with:
