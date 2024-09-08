@@ -115,7 +115,7 @@ export default function PullComponent({
 
   return (
     <>
-      <div>{elapsed / 1000} seconds</div>
+      <div>{(elapsed / 1000).toFixed(1)} seconds</div>
       <pre>
         {state.map((layer, i) => (
           <LayerPullComponent key={i} pull={layer} />
