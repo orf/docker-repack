@@ -45,7 +45,7 @@ jobs:
       - name: Run Benchmark
         run: >-
           hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.tag_prefix }}:{image}-{suffix} oci:/dev/shm/image" \
-            --warmup 5 \
+            --warmup 1 \
             -L suffix ${{ env.tags }} \
             -L image ${{ steps.matrix.outputs.images }} \
             --prepare "rm -rf /dev/shm/image/" \
