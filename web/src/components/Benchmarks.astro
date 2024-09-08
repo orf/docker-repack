@@ -2,7 +2,7 @@
 import { parseBenchmarkData } from "../benchmark_parser";
 import BenchmarkChart from "./BenchmarkChart.astro";
 
-const fullData = parseBenchmarkData();
+const fullData = await parseBenchmarkData();
 
 const dataset = fullData.images.sort((a, b) => b.times_faster - a.times_faster);
 ---

@@ -1,5 +1,6 @@
 import benchmark_data from "./data/benchmarks.json";
 import groupBy from "lodash.groupby";
+import { Octokit } from "@octokit/rest";
 
 export interface BenchmarkImageTime {
   image: string;
@@ -18,7 +19,15 @@ export interface BenchmarkData {
   images: BenchmarkImage[];
 }
 
-export function parseBenchmarkData(): BenchmarkData {
+const octokit = new Octokit();
+
+export async function parseBenchmarkData(): Promise<BenchmarkData> {
+    const resp = await octokit.actions.listArtifactsForRepo({
+        owner: "orf",
+        repo: "docker-repack"
+    });
+    throw new Error(JSON.stringify(resp.data.artifacts));
+
   const image_times: BenchmarkImageTime[] = benchmark_data.results.map(
     (res) => {
       return {
