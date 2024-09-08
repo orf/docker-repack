@@ -30,7 +30,7 @@ runs:
     - name: Repack
       id: repack
       run: |
-        ./docker-repack "docker://${{ steps.tag.outputs.tag }}" "oci://${{ env.OUTPUT_DIR }}" --target-size="${{ inputs.target-size }}" --platform=linux/amd64
+        ./docker-repack "docker://ghcr.io/${{ github.repository }}/demo:${{ steps.tag.outputs.tag }}" "oci://${{ env.OUTPUT_DIR }}" --target-size="${{ inputs.target-size }}" --platform=linux/amd64
         echo "output-dir=${{ env.OUTPUT_DIR }}" >> $GITHUB_OUTPUT
       shell: bash
       env:
