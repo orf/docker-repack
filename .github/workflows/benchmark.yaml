@@ -42,7 +42,7 @@ jobs:
       cancel-in-progress: false
 
     env:
-      RUNS: 2
+      RUNS: 50
 
     steps:
       - uses: actions/checkout@v4

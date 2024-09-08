@@ -29,7 +29,7 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
   const resp = await octokit.actions.listArtifactsForRepo({
     owner,
     repo,
-    name: "results",
+    name: "benchmark-results",
   });
   const artifact = resp.data.artifacts[0];
   const artifact_response = await octokit.actions.downloadArtifact({
