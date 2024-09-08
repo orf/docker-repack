@@ -170,6 +170,9 @@ jobs:
           rename-to: skopeo
           chmod: 0755
 
+      - name: "Skopeo authenticate ghcr.io"
+        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
+
       - name: repack-${{ matrix.target_size }}
         id: repack
         uses: ./.github/actions/repack-image-benchmark
