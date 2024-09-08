@@ -45,15 +45,6 @@ impl Display for Platform {
         if let Some(variant) = self.config.variant() {
             write!(f, "/{}", variant)?;
         }
-        if let Some(os_version) = self.config.os_version() {
-            write!(f, "/{}", os_version)?;
-        }
-        if let Some(os_features) = self.config.os_features() {
-            for feature in os_features {
-                write!(f, "/{}", feature)?;
-            }
-        }
-
         Ok(())
     }
 }
