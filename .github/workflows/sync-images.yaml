@@ -94,7 +94,7 @@ jobs:
         run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         env:
           source: docker://${{ matrix.upstream_image }}
-          dest: docker://ghcr.io/${{ github.repository }}/docker-repack-demo:${{ matrix.destination }}-original
+          dest: docker://ghcr.io/${{ github.repository }}/repack-demo:${{ matrix.destination }}-original
 
   repack-image:
     runs-on: ubuntu-latest
@@ -153,7 +153,7 @@ jobs:
           echo "output-dir=${{ env.output_dir }}" >> $GITHUB_OUTPUT
         shell: bash
         env:
-          source: "ghcr.io/${{ github.repository }}/docker-repack-demo:${{ matrix.image }}-original"
+          source: "ghcr.io/${{ github.repository }}/repack-demo:${{ matrix.image }}-original"
           output_dir: "oci/${{ matrix.target_size }}/"
 
       - name: Copy image
@@ -161,7 +161,7 @@ jobs:
         shell: bash
         env:
           source: 'oci:${{ steps.repack.outputs.output-dir }}'
-          dest: docker://ghcr.io/${{ github.repository }}/docker-repack-demo:${{ matrix.image }}-${{ matrix.target_size }}
+          dest: docker://ghcr.io/${{ github.repository }}/repack-demo:${{ matrix.image }}-${{ matrix.target_size }}
 
   sync-images-to-docker:
     runs-on: ubuntu-latest
@@ -181,5 +181,5 @@ jobs:
         env:
           dest: docker.io/orfal
           dest_creds: ${{ secrets.DOCKER_HUB_USER }}:${{ secrets.DOCKER_HUB_PAT }}
-          source: ghcr.io/${{ github.repository }}/docker-repack-demo
+          source: ghcr.io/${{ github.repository }}/repack-demo
           source_creds: ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}
