@@ -28,7 +28,7 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
       image.times.map((time: BenchmarkImageTime) => [time.type, time.time]),
     );
 
-    data.push({ image: image.image, ...times });
+    data.push({ image: image.name, ...times });
   }
 
   if (types !== undefined) {

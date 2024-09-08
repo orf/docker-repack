@@ -37,11 +37,6 @@ jobs:
       - run: sudo dpkg -i hyperfine_1.16.1_amd64.deb
       - run: hyperfine --version
 
-      - name: Output matrix
-        id: matrix
-        run: |
-          echo "images=$(cat benchmark/sources.json | jq -rc '[.upstream_images[] | sub(":"; "-") | sub("/"; "-")] | join(",")')" >> "$GITHUB_OUTPUT"
-
       - name: Run Benchmark
         run: >-
           hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.tag_prefix }}:{image}-{suffix} oci:/dev/shm/image" \

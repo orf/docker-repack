@@ -7,9 +7,15 @@ interface Props {
 }
 
 const {image} = Astro.props
+
+const fastest = Math.min(...image.times.map((time) => time.time));
+const original = image.times.find((time) => time.type === "original")!.time;
 ---
 
-<h1 class="text-2xl font-bold">{image.image}</h1>
+<h1 class="text-2xl font-bold">{image.name} ({image.times_faster}x faster)</h1>
+
+<p>Fastest: {fastest}</p>
+<p>Original: {original}</p>
 
 <div class="w-1/2 h-96">
   <ReactBenchmarkChart

@@ -9,15 +9,20 @@ jobs:
   matrix:
     runs-on: ubuntu-latest
     outputs:
-      upstream_images: ${{ steps.matrix.outputs.upstream_images }}
+      upstream_images: ${{ steps.matrix.outputs.result }}
+      destination_images: ${{ steps.destinations.outputs.result }}
     steps:
       - uses: actions/checkout@v4
-      - name: Output matrix
+      - name: matrix
+        uses: mikefarah/yq@v4.44.3
         id: matrix
-        run: |
-          MATRIX="$(cat benchmark/sources.json | jq -rc '.upstream_images')"
-          echo "Matrix: ${MATRIX}"
-          echo "upstream_images=${MATRIX}" >> "$GITHUB_OUTPUT"
+        with:
+          cmd: yq -o=json '.upstream_images' 'benchmark/sources.yaml'
+      - name: yq - portable yaml processor
+        uses: mikefarah/yq@v4.44.3
+        id: destinations
+        with:
+          cmd: yq -o=json '[.upstream_images[].destination]' 'benchmark/sources.yaml'
 
   build:
     runs-on: ubuntu-latest
@@ -64,7 +69,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        upstream_image: ${{ fromJSON(needs.matrix.outputs.upstream_images) }}
+        include: ${{ fromJSON(needs.matrix.outputs.upstream_images) }}
 
     concurrency:
       group: "sync-${{ matrix.upstream_image }}"
@@ -87,14 +92,11 @@ jobs:
       - name: "Skopeo authenticate ghcr.io"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
-      - name: Push Original image
-        id: push-original
-        uses: ./.github/actions/push-image
-        with:
-          upstream-image: ${{ matrix.upstream_image }}
-          tag-suffix: '-original'
-          source: 'docker://${{ matrix.upstream_image }}'
-
+      - name: Copy image
+        run: skopeo copy --all --image-parallel-copies=10 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
+        env:
+          source: docker://${{ matrix.upstream_image }}
+          dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.destination }}
 
   repack-image:
     runs-on: ubuntu-latest
@@ -108,8 +110,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        upstream_image: ${{ fromJSON(needs.matrix.outputs.upstream_images) }}
-        target_size: ['50MB', '100MB', '200MB', '500MB']
+        upstream_image: ${{ fromJSON(needs.matrix.outputs.destination_images) }}
+        target_size: [ '50MB', '100MB', '200MB', '500MB' ]
 
     concurrency:
       group: "push-${{ matrix.upstream_image }}-${{ matrix.target_size }}"

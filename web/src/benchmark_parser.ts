@@ -9,7 +9,8 @@ export interface BenchmarkImageTime {
 }
 
 export interface BenchmarkImage {
-  image: string;
+  name: string;
+  times_faster: number;
   times: BenchmarkImageTime[];
 }
 
@@ -33,9 +34,16 @@ export function parseBenchmarkData(): BenchmarkData {
       if (times === undefined) {
         throw new Error("times is undefined");
       }
+
+      const fastest = Math.min(...times.map((time) => time.time));
+      const original = times.find((time) => time.type === "original")!.time;
+
+      const percentage_faster = Number((original / fastest).toFixed(1));
+
       return {
-        image,
+        name: image,
         times,
+        times_faster: percentage_faster,
       };
     },
   );

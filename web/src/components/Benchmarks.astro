@@ -1,13 +1,21 @@
 ---
-import {parseBenchmarkData} from "../benchmark_parser"
-import BenchmarkChart from "./BenchmarkChart.astro"
+import { parseBenchmarkData } from "../benchmark_parser";
+import BenchmarkChart from "./BenchmarkChart.astro";
 
-const fullData = parseBenchmarkData()
+const fullData = parseBenchmarkData();
 
-const dataset = fullData.images
+const dataset = fullData.images.sort((a, b) => b.times_faster - a.times_faster);
 ---
 
-{
-    dataset.map((image) =>
-    <BenchmarkChart image={image}/>)
-    }
+<h1 class="text-2xl font-bold">Benchmarks</h1>
+<div class="columns-3">
+  {
+    dataset.map((image) => (
+      <div>
+        {image.name} - {image.times_faster}x faster
+      </div>
+    ))
+  }
+</div>
+
+{dataset.map((image) => <BenchmarkChart image={image} />)}
