@@ -19,7 +19,7 @@ jobs:
         id: matrix
         with:
           cmd: yq -o=json '.upstream_images' 'benchmark/sources.yaml'
-      - name: matrix sources
+      - name: matrix destinations
         uses: mikefarah/yq@v4.44.3
         id: destinations
         with:

@@ -4,13 +4,42 @@ on:
   workflow_dispatch:
 
 jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      destinations: ${{ steps.destinations.outputs.result }}
+      sizes: ${{ steps.sizes.outputs.result }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: matrix destinations
+        uses: mikefarah/yq@v4.44.3
+        id: destinations
+        with:
+          cmd: yq -o=json '[.upstream_images[].destination]' 'benchmark/sources.yaml'
+      - name: sizes
+        uses: mikefarah/yq@v4.44.3
+        id: sizes
+        with:
+          cmd: yq -r -o=json '.sizes | join(",")' 'benchmark/sources.yaml'
+
   benchmark:
     runs-on: ubuntu-latest
+
+    needs: [ matrix ]
 
     permissions:
       contents: read
       packages: read
       id-token: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.matrix.outputs.destinations) }}
+
+    concurrency:
+      group: "benchmark-${{ matrix.image }}"
+      cancel-in-progress: false
 
     env:
       RUNS: 2
@@ -37,33 +66,21 @@ jobs:
       - run: sudo dpkg -i hyperfine_1.16.1_amd64.deb
       - run: hyperfine --version
 
-      - name: images
-        uses: mikefarah/yq@v4.44.3
-        id: images
-        with:
-          cmd: yq -o=json '[.upstream_images[].destination] | join(",")' 'benchmark/sources.yaml'
-
-      - name: sizes
-        uses: mikefarah/yq@v4.44.3
-        id: sizes
-        with:
-          cmd: yq -r -o=json '.sizes | join(",")' 'benchmark/sources.yaml'
-
       - name: Run Benchmark
         run: >-
           hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.tag_prefix }}:{image}-{type} oci:/dev/shm/image" \
             --warmup 1 \
-            -L image ${{ steps.images.outputs.result }} \
-            -L type original,${{ steps.sizes.outputs.result }} \
+            -L image ${{ matrix.image }} \
+            -L type original,${{ needs.matrix.outputs.sizes }} \
             --prepare "rm -rf /dev/shm/image/" \
             --cleanup "rm -rf /dev/shm/image/" \
-            --runs="${{ env.RUNS }}" --export-json=results.json --shell=none
+            --runs="${{ env.RUNS }}" --export-json=results-${{ matrix.image }}.json --shell=none
         env:
           tag_prefix: "ghcr.io/${{ github.repository }}/demo"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: benchmark-results
-          path: results.json
+          name: benchmark-results-${{ matrix.image }}
+          path: results-${{ matrix.image }}.json
           retention-days: 5
           if-no-files-found: error
