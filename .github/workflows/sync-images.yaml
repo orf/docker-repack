@@ -110,8 +110,6 @@ jobs:
           tag-suffix: '-zstd'
           source: 'dir:original-zstd/'
 
-      - run: rm -rf original-zstd/
-
       - name: Push Original image
         id: push-original
         uses: ./.github/actions/push-image
