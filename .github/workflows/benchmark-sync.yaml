@@ -1,4 +1,4 @@
-name: Benchmark Sync
+name: Repack Upstream Images
 
 on:
   workflow_dispatch:
