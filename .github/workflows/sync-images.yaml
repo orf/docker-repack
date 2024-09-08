@@ -178,14 +178,13 @@ jobs:
       id-token: write
 
     steps:
-      - name: "Skopeo authenticate ghcr.io"
-        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
-
-      - name: "Skopeo authenticate dockerhub"
-        run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
-
-      - name: Sync images - docker.io
+      - name: Sync images
         id: push-dockerhub
         run: |
-          skopeo sync --all --retry-times=3 --src docker --dest docker ghcr.io/${{ github.repository }}/demo docker.io/orfal/docker-repack-demo
+          skopeo sync --all --retry-times=3 --src docker --dest docker ${{ env.source }} ${{ env.dest }} --src-creds ${{ env.source_creds }} --dest-creds ${{ env.dest_creds }}
         shell: bash
+        env:
+          dest: docker.io/orfal/docker-repack-demo
+          dest_creds: ${{ secrets.DOCKER_HUB_USER }}:${{ secrets.DOCKER_HUB_PAT }}
+          source: ghcr.io/${{ github.repository }}/demo
+          source_creds: ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}
