@@ -77,9 +77,6 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      # Needed for the custom action
-      - uses: actions/checkout@v4
-
       - name: install skopeo
         uses: jaxxstorm/action-install-gh-release@v1
         with:
@@ -119,8 +116,6 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      # Needed for the custom action
-      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: cli
