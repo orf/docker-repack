@@ -94,7 +94,7 @@ jobs:
         run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         env:
           source: docker://${{ matrix.upstream_image }}
-          dest: docker://ghcr.io/${{ github.repository }}/repack-demo:${{ matrix.destination }}-original
+          dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.destination }}-original
 
   repack-image:
     runs-on: ubuntu-latest
@@ -146,6 +146,9 @@ jobs:
       - name: "Skopeo authenticate ghcr.io"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
+      - name: "Skopeo authenticate dockerhub"
+        run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
+
       - name: Repack
         id: repack
         run: |
@@ -153,33 +156,19 @@ jobs:
           echo "output-dir=${{ env.output_dir }}" >> $GITHUB_OUTPUT
         shell: bash
         env:
-          source: "ghcr.io/${{ github.repository }}/repack-demo:${{ matrix.image }}-original"
+          source: "ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}-original"
           output_dir: "oci/${{ matrix.target_size }}/"
 
-      - name: Copy image
+      - name: Copy image - ghcr
         run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         shell: bash
         env:
           source: 'oci:${{ steps.repack.outputs.output-dir }}'
-          dest: docker://ghcr.io/${{ github.repository }}/repack-demo:${{ matrix.image }}-${{ matrix.target_size }}
+          dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}-${{ matrix.target_size }}
 
-  sync-images-to-docker:
-    runs-on: ubuntu-latest
-    needs: [ repack-image, sync-original-images ]
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
-
-    steps:
-      - name: Sync images
-        id: push-dockerhub
-        run: |
-          skopeo sync --all --retry-times=3 --src docker --dest docker ${{ env.source }} ${{ env.dest }} --src-creds ${{ env.source_creds }} --dest-creds ${{ env.dest_creds }}
+      - name: Copy image - dockerhub
+        run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         shell: bash
         env:
-          dest: docker.io/orfal
-          dest_creds: ${{ secrets.DOCKER_HUB_USER }}:${{ secrets.DOCKER_HUB_PAT }}
-          source: ghcr.io/${{ github.repository }}/repack-demo
-          source_creds: ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}
+          source: 'oci:${{ steps.repack.outputs.output-dir }}'
+          dest: docker://docker.io/orfal/docker-repack-demo:${{ matrix.image }}-${{ matrix.target_size }}

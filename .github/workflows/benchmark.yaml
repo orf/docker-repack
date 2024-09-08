@@ -54,5 +54,5 @@ jobs:
         with:
           name: results
           path: results.json
-          retention-days: 1
+          retention-days: 5
           if-no-files-found: error
