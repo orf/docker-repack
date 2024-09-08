@@ -39,8 +39,12 @@ globset = { version = "0.4.14", default-features = false }
 
 [features]
 default = ["perf", "zstd-experimental"]
-perf = ["tracing/release_max_level_info", "flate2/zlib-ng", "sha2/asm", "zstd/arrays"]
+perf = ["tracing/release_max_level_info", "flate2/zlib-ng", "zstd/arrays"]
 zstd-experimental = ["zstd/experimental"]
+
+[target.'cfg(all(unix, any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")))'.dependencies]
+sha2 = { version = "0.10.8", features = ["asm"] }
+
 
 [profile.lto]
 inherits = "release"
