@@ -5,8 +5,6 @@ inputs:
     required: true
   target-size:
     required: true
-  source:
-    required: true
   output:
     required: false
     default: 'repacked'
@@ -20,10 +18,19 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Compute tag
+      id: tag
+      shell: bash
+      run: |
+        TAG="$(echo "${{ inputs.upstream-image }}" | tr '/' '-' | tr ':' '-')"
+        echo "Computed tag: ${TAG}"
+        echo "Upstream image: ${{ inputs.upstream-image }}"
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
     - name: Repack
       id: repack
       run: |
-        ./docker-repack "oci://${{ inputs.source }}" "oci://${{ env.OUTPUT_DIR }}" --target-size="${{ inputs.target-size }}" --platform=linux/amd64
+        ./docker-repack "docker://${{ steps.tag.outputs.tag }}" "oci://${{ env.OUTPUT_DIR }}" --target-size="${{ inputs.target-size }}" --platform=linux/amd64
         echo "output-dir=${{ env.OUTPUT_DIR }}" >> $GITHUB_OUTPUT
       shell: bash
       env:

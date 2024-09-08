@@ -45,10 +45,11 @@ jobs:
         id: matrix
         run: |
           echo "upstream_images=$(cat benchmark/sources.json | jq -rc '.upstream_images')" >> "$GITHUB_OUTPUT"
-
-  repack-image:
+  
+  sync-original-images:
     runs-on: ubuntu-latest
     needs: [ build ]
+
     permissions:
       contents: read
       packages: write
@@ -61,22 +62,14 @@ jobs:
         upstream_image: ${{ fromJSON(needs.build.outputs.upstream_images) }}
 
     concurrency:
-      group: "push-${{ matrix.upstream_image }}"
+      group: "sync-${{ matrix.upstream_image }}"
       cancel-in-progress: false
 
     steps:
       # Needed for the custom action
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: cli
-
-      - run: chmod +x docker-repack
-      - run: ./docker-repack --version
-
       - name: Disk space before
         run: df -h
-
       - name: Maximize build space
         shell: bash
         run: |
@@ -95,9 +88,6 @@ jobs:
           rename-to: skopeo
           chmod: 0755
 
-      - name: skopeo version
-        run: skopeo --version
-
       - name: Download original - Docker
         run: skopeo copy --all --image-parallel-copies=10 docker://${{ matrix.upstream_image }} oci:original
 
@@ -106,9 +96,6 @@ jobs:
 
       - name: "Skopeo authenticate ghcr.io"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
-
-      - name: "Skopeo authenticate dockerhub"
-        run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
 
       - name: Push zstd image
         id: push-zstd
@@ -128,42 +115,59 @@ jobs:
           tag-suffix: '-original'
           source: 'oci:original/'
 
-      - name: Repack 25mb
-        id: repack-25mb
-        uses: ./.github/actions/repack-image-benchmark
-        with:
-          target-size: '25MB'
-          upstream-image: '${{ matrix.upstream_image }}'
-          source: 'original/'
 
-      - name: repack-50mb
-        id: repack-50mb
-        uses: ./.github/actions/repack-image-benchmark
-        with:
-          target-size: '50MB'
-          upstream-image: '${{ matrix.upstream_image }}'
-          source: 'original/'
+  repack-image:
+    runs-on: ubuntu-latest
+    needs: [ sync-original-images ]
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
 
-      - name: repack-100mb
-        id: repack-100mb
-        uses: ./.github/actions/repack-image-benchmark
-        with:
-          target-size: '100MB'
-          upstream-image: '${{ matrix.upstream_image }}'
-          source: 'original/'
+    strategy:
+      fail-fast: false
+      matrix:
+        upstream_image: ${{ fromJSON(needs.build.outputs.upstream_images) }}
+        target_size: ['50MB', '100MB', '200MB', '500MB']
 
-      - name: repack-200mb
-        id: repack-200mb
-        uses: ./.github/actions/repack-image-benchmark
-        with:
-          target-size: '200MB'
-          upstream-image: '${{ matrix.upstream_image }}'
-          source: 'original/'
+    concurrency:
+      group: "push-${{ matrix.upstream_image }}"
+      cancel-in-progress: false
 
-      - name: repack-500mb
-        id: repack-500mb
+    steps:
+      # Needed for the custom action
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli
+
+      - run: chmod +x docker-repack
+      - run: ./docker-repack --version
+
+      - name: Disk space before
+        run: df -h
+      - name: Maximize build space
+        shell: bash
+        run: |
+          sudo rm -rf /usr/share/dotnet/* &
+          sudo rm -rf /usr/local/lib/android/* &
+      - name: Disk space after
+        run: df -h
+
+      - name: install skopeo
+        uses: jaxxstorm/action-install-gh-release@v1
+        with:
+          repo: lework/skopeo-binary
+          tag: v1.16.1
+          cache: true
+          extension-matching: disable
+          rename-to: skopeo
+          chmod: 0755
+
+      - name: repack-${{ matrix.target_size }}
+        id: repack-${{ matrix.target_size }}
         uses: ./.github/actions/repack-image-benchmark
         with:
-          target-size: '500MB'
+          target-size: '${{ matrix.target_size }}'
           upstream-image: '${{ matrix.upstream_image }}'
-          source: 'original/'
