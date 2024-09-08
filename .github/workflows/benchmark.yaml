@@ -37,18 +37,29 @@ jobs:
       - run: sudo dpkg -i hyperfine_1.16.1_amd64.deb
       - run: hyperfine --version
 
+      - name: images
+        uses: mikefarah/yq@v4.44.3
+        id: images
+        with:
+          cmd: yq -o=json '[.upstream_images[].destination] | join(",")' 'benchmark/sources.yaml'
+
+      - name: sizes
+        uses: mikefarah/yq@v4.44.3
+        id: sizes
+        with:
+          cmd: yq -r -o=json '.sizes | join(",")' 'benchmark/sources.yaml'
+
       - name: Run Benchmark
         run: >-
-          hyperfine "skopeo copy --image-parallel-copies=40 docker://${{ env.tag_prefix }}:{image}-{suffix} oci:/dev/shm/image" \
+          hyperfine "skopeo copy --image-parallel-copies=40 docker://${{ env.tag_prefix }}:{image}-{type} oci:/dev/shm/image" \
             --warmup 1 \
-            -L suffix ${{ env.tags }} \
-            -L image ${{ steps.matrix.outputs.images }} \
+            -L image original,${{ steps.images.outputs.result }} \
+            -L type original,${{ steps.sizes.outputs.result }} \
             --prepare "rm -rf /dev/shm/image/" \
             --cleanup "rm -rf /dev/shm/image/" \
             --runs="${{ env.RUNS }}" --export-json=results.json --shell=none
         env:
           tag_prefix: "ghcr.io/${{ github.repository }}/demo"
-          tags: original,50MB,100MB,200MB,500MB
 
       - uses: actions/upload-artifact@v4
         with:

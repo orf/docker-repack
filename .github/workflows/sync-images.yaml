@@ -24,7 +24,7 @@ jobs:
         id: destinations
         with:
           cmd: yq -o=json '[.upstream_images[].destination]' 'benchmark/sources.yaml'
-      - name: matrix sources
+      - name: matrix sizes
         uses: mikefarah/yq@v4.44.3
         id: sizes
         with:
