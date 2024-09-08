@@ -89,7 +89,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-      - run: cat results-*.json | jq '.' > results.json
+      - run: |
+          cat results-*.json | jq ".results[]" | jq -s "{results: .}" > results.json
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
