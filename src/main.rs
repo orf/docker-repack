@@ -226,8 +226,8 @@ fn handle_input_images<T: InputImage>(
             (input_image, items)
         })
         .collect();
-
-    info!("Packing {} files into layers", all_image_items.len());
+    let total_item_count: usize = all_image_items.iter().map(|(_, map)| map.len()).sum();
+    info!("Packing {} files into layers", total_item_count);
     let output_layers = all_image_items
         .iter()
         .map(|(input_image, items)| {
