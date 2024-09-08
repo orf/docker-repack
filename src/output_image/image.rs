@@ -145,7 +145,7 @@ impl OutputImageWriter {
                 HistoryBuilder::default()
                     .author("docker-repack")
                     .created_by(l.layer.to_string())
-                    .created(&created_at)
+                    .created(config.created().as_ref().unwrap_or(&created_at))
                     .empty_layer(false)
                     .build()
                     .with_context(|| format!("HistoryBuilder Build for layer {}", l.layer))
