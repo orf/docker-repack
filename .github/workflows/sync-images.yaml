@@ -110,11 +110,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        upstream_image: ${{ fromJSON(needs.matrix.outputs.destination_images) }}
+        image: ${{ fromJSON(needs.matrix.outputs.destination_images) }}
         target_size: [ '50MB', '100MB', '200MB', '500MB' ]
 
     concurrency:
-      group: "push-${{ matrix.upstream_image }}-${{ matrix.target_size }}"
+      group: "push-${{ matrix.image }}-${{ matrix.target_size }}"
       cancel-in-progress: false
 
     steps:
@@ -150,12 +150,21 @@ jobs:
       - name: "Skopeo authenticate ghcr.io"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
-      - name: repack-${{ matrix.target_size }}
+      - name: Repack
         id: repack
-        uses: ./.github/actions/repack-image-benchmark
-        with:
-          target-size: '${{ matrix.target_size }}'
-          upstream-image: '${{ matrix.upstream_image }}'
+        run: |
+          ./docker-repack "docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}" "oci://${{ env.OUTPUT_DIR }}" --target-size="${{ matrix.target_size }}" --platform=linux/amd64
+          echo "output-dir=${{ env.OUTPUT_DIR }}" >> $GITHUB_OUTPUT
+        shell: bash
+        env:
+          OUTPUT_DIR: "oci/${{ matrix.target_size }}/"
+
+      - name: Copy image
+        run: skopeo copy --all --image-parallel-copies=10 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
+        shell: bash
+        env:
+          source: 'oci:${{ steps.repack.outputs.output-dir }}'
+          dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}-${{ matrix.target_size }}
 
   sync-images-to-docker:
     runs-on: ubuntu-latest

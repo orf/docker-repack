@@ -18,15 +18,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Compute tag
-      id: tag
-      shell: bash
-      run: |
-        TAG="$(echo "${{ inputs.upstream-image }}" | tr '/' '-' | tr ':' '-')"
-        echo "Computed tag: ${TAG}"
-        echo "Upstream image: ${{ inputs.upstream-image }}"
-        echo "tag=${TAG}" >> $GITHUB_OUTPUT
-
     - name: Repack
       id: repack
       run: |
@@ -36,12 +27,12 @@ runs:
       env:
         OUTPUT_DIR: "${{ inputs.output }}/${{ inputs.target-size }}/"
 
-    - id: push
-      uses: ./.github/actions/push-image
-      with:
-        upstream-image: '${{ inputs.upstream-image }}'
+    - name: Copy image
+      run: skopeo copy --all --image-parallel-copies=10 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
+      shell: bash
+      env:
         source: 'oci:${{ steps.repack.outputs.output-dir }}'
-        tag-suffix: '-${{ inputs.target-size }}'
+        dest: docker://ghcr.io/${{ github.repository }}/demo:${{ inputs.tag }}-${{ inputs.target-size }}
 
     - name: Cleanup
       run: rm -rf "${{ steps.repack.outputs.output-dir }}"
