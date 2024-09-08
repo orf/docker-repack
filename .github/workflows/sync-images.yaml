@@ -176,3 +176,25 @@ jobs:
         with:
           target-size: '${{ matrix.target_size }}'
           upstream-image: '${{ matrix.upstream_image }}'
+
+  sync-images-to-docker:
+    runs-on: ubuntu-latest
+    needs: [ repack-image, sync-original-images ]
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: "Skopeo authenticate ghcr.io"
+        run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
+
+      - name: "Skopeo authenticate dockerhub"
+        run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
+
+      - name: Sync images - docker.io
+        id: push-dockerhub
+        run: |
+          skopeo sync --all --retry-times=3 --src docker --dest docker ghcr.io/${{ github.repository }}/docker-repack-demo docker.io/orfal/docker-repack-demo
+        shell: bash
