@@ -96,7 +96,7 @@ jobs:
         run: skopeo copy --all --image-parallel-copies=10 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         env:
           source: docker://${{ matrix.upstream_image }}
-          dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.destination }}
+          dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.destination }}-original
 
   repack-image:
     runs-on: ubuntu-latest

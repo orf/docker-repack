@@ -6,7 +6,7 @@ upstream_images:
 #  - upstream_image: "nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04"
 #    destination: "nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04"
   - upstream_image: "neo4j:enterprise"
-    destination: "neo4j-enterprise"
+    destination: "neo4j-enterprise-original"
 #  - upstream_image: "elasticsearch:8.15.0"
 #    destination: "elasticsearch-8.15.0"
 #  - upstream_image: "spark:python3-java17"
