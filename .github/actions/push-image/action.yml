@@ -35,4 +35,4 @@ runs:
         echo "image-reference=${{ env.IMAGE_REFERENCE }}" >> $GITHUB_OUTPUT
       shell: bash
       env:
-        IMAGE_REFERENCE: "ghcr.io/${{ github.repository }}/docker-repack-demo:${{ steps.compute-tag.outputs.tag }}"
+        IMAGE_REFERENCE: "ghcr.io/${{ github.repository }}/demo:${{ steps.compute-tag.outputs.tag }}"

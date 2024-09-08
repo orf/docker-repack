@@ -199,5 +199,5 @@ jobs:
       - name: Sync images - docker.io
         id: push-dockerhub
         run: |
-          skopeo sync --all --retry-times=3 --src docker --dest docker ghcr.io/${{ github.repository }}/docker-repack-demo docker.io/orfal/docker-repack-demo
+          skopeo sync --all --retry-times=3 --src docker --dest docker ghcr.io/${{ github.repository }}/demo docker.io/orfal/docker-repack-demo
         shell: bash
