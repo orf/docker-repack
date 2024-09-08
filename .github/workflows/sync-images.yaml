@@ -96,8 +96,8 @@ jobs:
       - name: "Skopeo authenticate ghcr.io"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
-      - name: Download original - Docker
-        run: skopeo copy --image-parallel-copies=10 docker://${{ matrix.upstream_image }} oci:original
+#      - name: Download original - Docker
+#        run: skopeo copy --image-parallel-copies=10 docker://${{ matrix.upstream_image }} oci:original
 
 #      - name: Compress with zstd
 #        run: skopeo copy --image-parallel-copies=10 oci:original dir:original-zstd --dest-compress --dest-compress-format=zstd
@@ -116,7 +116,7 @@ jobs:
         with:
           upstream-image: ${{ matrix.upstream_image }}
           tag-suffix: '-original'
-          source: 'oci:original/'
+          source: 'docker://${{ matrix.upstream_image }}'
 
 
   repack-image:
