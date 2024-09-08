@@ -47,7 +47,8 @@ jobs:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: "sccache"
 
-      - run: du -hs target/${{ env.build-profile }}/docker-repack
+      - name: Size
+        run: du -hs target/${{ env.build-profile }}/docker-repack
 
       - uses: actions/upload-artifact@v4
         with:
@@ -157,7 +158,7 @@ jobs:
           echo "output-dir=${{ env.output_dir }}" >> $GITHUB_OUTPUT
         shell: bash
         env:
-          source: "ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}"
+          source: "ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}-original"
           output_dir: "oci/${{ matrix.target_size }}/"
 
       - name: Copy image
