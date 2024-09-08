@@ -11,6 +11,7 @@ jobs:
     outputs:
       upstream_images: ${{ steps.matrix.outputs.result }}
       destination_images: ${{ steps.destinations.outputs.result }}
+      sizes: ${{ steps.sizes.outputs.result }}
     steps:
       - uses: actions/checkout@v4
       - name: matrix all
@@ -23,6 +24,11 @@ jobs:
         id: destinations
         with:
           cmd: yq -o=json '[.upstream_images[].destination]' 'benchmark/sources.yaml'
+      - name: matrix sources
+        uses: mikefarah/yq@v4.44.3
+        id: sizes
+        with:
+          cmd: yq -o=json '.sizes' 'benchmark/sources.yaml'
 
   build:
     runs-on: ubuntu-latest
@@ -109,7 +115,7 @@ jobs:
       fail-fast: false
       matrix:
         image: ${{ fromJSON(needs.matrix.outputs.destination_images) }}
-        target_size: [ '50MB', '100MB', '200MB', '500MB' ]
+        target_size: ${{ fromJSON(needs.matrix.outputs.sizes) }}
 
     concurrency:
       group: "push-${{ matrix.image }}-${{ matrix.target_size }}"
