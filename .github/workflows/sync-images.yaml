@@ -8,18 +8,19 @@ on:
 jobs:
   matrix:
     runs-on: ubuntu-latest
+    outputs:
+      upstream_images: ${{ steps.matrix.outputs.upstream_images }}
     steps:
       - uses: actions/checkout@v4
       - name: Output matrix
         id: matrix
         run: |
-          echo "upstream_images=$(cat benchmark/sources.json | jq -rc '.upstream_images')" >> "$GITHUB_OUTPUT"
+          MATRIX="$(cat benchmark/sources.json | jq -rc '.upstream_images')"
+          echo "Matrix: ${MATRIX}"
+          echo "upstream_images=${MATRIX}" >> "$GITHUB_OUTPUT"
 
   build:
     runs-on: ubuntu-latest
-
-    outputs:
-      upstream_images: ${{ steps.matrix.outputs.upstream_images }}
 
     env:
       build-profile: 'lto'
