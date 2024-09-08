@@ -41,16 +41,16 @@ pub struct Platform {
 
 impl Display for Platform {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}-{}", self.config.os(), self.config.architecture())?;
+        write!(f, "{}/{}", self.config.os(), self.config.architecture())?;
         if let Some(variant) = self.config.variant() {
-            write!(f, "-{}", variant)?;
+            write!(f, "/{}", variant)?;
         }
         if let Some(os_version) = self.config.os_version() {
-            write!(f, "-{}", os_version)?;
+            write!(f, "/{}", os_version)?;
         }
         if let Some(os_features) = self.config.os_features() {
             for feature in os_features {
-                write!(f, "-{}", feature)?;
+                write!(f, "/{}", feature)?;
             }
         }
 
