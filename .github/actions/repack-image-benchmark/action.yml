@@ -23,7 +23,7 @@ runs:
     - name: Repack
       id: repack
       run: |
-        ./docker-repack "oci://${{ inputs.source }}" ${{ env.OUTPUT_DIR }} --target-size="${{ inputs.target-size }}"
+        ./docker-repack "oci://${{ inputs.source }}" "oci://${{ env.OUTPUT_DIR }}" --target-size="${{ inputs.target-size }}"
         echo "output-dir=${{ env.OUTPUT_DIR }}" >> $GITHUB_OUTPUT
       shell: bash
       env:

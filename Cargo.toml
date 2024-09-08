@@ -35,6 +35,7 @@ tokio-util = { version = "0.7.12", features = ["full"] }
 clap = { version = "4.5.16", features = ["derive"] }
 shadow-rs = "0.33.0"
 rand = {version = "0.8.5", default-features = false, features = ["small_rng", "getrandom", "min_const_gen"]}
+globset = { version = "0.4.14", default-features = false }
 
 [features]
 default = ["perf", "zstd-experimental"]

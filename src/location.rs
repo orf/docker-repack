@@ -4,21 +4,21 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 #[derive(Debug, Clone)]
-pub enum SourceImage {
+pub enum Location {
     Oci(PathBuf),
     Docker(Reference),
 }
 
-impl Display for SourceImage {
+impl Display for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SourceImage::Oci(path) => write!(f, "oci://{}", path.display()),
-            SourceImage::Docker(reference) => write!(f, "docker://{}", reference),
+            Location::Oci(path) => write!(f, "oci://{}", path.display()),
+            Location::Docker(reference) => write!(f, "docker://{}", reference),
         }
     }
 }
 
-impl FromStr for SourceImage {
+impl FromStr for Location {
     type Err = anyhow::Error;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {

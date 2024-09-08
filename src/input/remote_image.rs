@@ -1,5 +1,6 @@
 use crate::input::layers::InputLayer;
 use crate::input::{get_layer_media_type, InputImage};
+use crate::platform_matcher::PlatformMatcher;
 use crate::progress;
 use anyhow::Context;
 use docker_credential::{CredentialRetrievalError, DockerCredential};
@@ -103,13 +104,16 @@ impl Display for RemoteImage {
 }
 
 impl RemoteImage {
-    // #[instrument(skip_all, fields(image = %reference))]
     #[instrument(name = "load_images", skip_all, fields(image = %reference))]
-    pub fn create_remote_images(handle: &Handle, reference: Reference) -> anyhow::Result<Vec<Self>> {
-        handle.block_on(Self::from_list_async(reference))
+    pub fn create_remote_images(
+        handle: &Handle,
+        reference: Reference,
+        platform: &PlatformMatcher,
+    ) -> anyhow::Result<Vec<Self>> {
+        handle.block_on(Self::from_list_async(reference, platform))
     }
 
-    async fn from_list_async(reference: Reference) -> anyhow::Result<Vec<Self>> {
+    async fn from_list_async(reference: Reference, platform_matcher: &PlatformMatcher) -> anyhow::Result<Vec<Self>> {
         let auth = build_auth(&reference);
         let client = Client::new(Default::default());
         debug!("Fetching manifest list for {}", reference);
@@ -127,13 +131,7 @@ impl RemoteImage {
                 debug!("Found image index");
                 let iterator = progress::progress_iter("Reading Manifests", index.manifests.into_iter());
                 let manifests = iterator
-                    .filter(|entry| match entry.platform.as_ref() {
-                        Some(platform) if platform.os == "linux" => true,
-                        _ => {
-                            trace!("Skipping unknown platform manifest for entry: {:?}", entry);
-                            false
-                        }
-                    })
+                    .filter(|entry| platform_matcher.matches_oci_client_platform(entry.platform.as_ref()))
                     .filter_map(|entry| {
                         let media_type = entry.media_type.as_str();
                         trace!("Checking entry media type ({media_type}) {:?}", entry);
@@ -163,7 +161,6 @@ impl RemoteImage {
         }
     }
 
-    // #[instrument(skip_all, fields(image = %reference))]
     async fn from_image_reference(reference: Reference, client: Client, auth: RegistryAuth) -> anyhow::Result<Self> {
         debug!("Fetching manifest for {}", reference);
         let (manifest_content, _) = client
@@ -261,7 +258,8 @@ mod test {
     fn test_remote_image() {
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let reference = "alpine:3.20".parse().unwrap();
-        let images = RemoteImage::create_remote_images(runtime.handle(), reference).unwrap();
+        let matcher = crate::platform_matcher::PlatformMatcher::match_all();
+        let images = RemoteImage::create_remote_images(runtime.handle(), reference, &matcher).unwrap();
         assert_ne!(images.len(), 0);
         for image in images {
             let layers = image.layers().unwrap();

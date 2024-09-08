@@ -1,8 +1,9 @@
 use crate::input::layers::InputLayer;
 use crate::input::InputImage;
+use crate::platform_matcher::PlatformMatcher;
 use crate::progress;
 use anyhow::{bail, Context};
-use oci_spec::image::{Descriptor, ImageConfiguration, ImageIndex, ImageManifest, MediaType, Os};
+use oci_spec::image::{Descriptor, ImageConfiguration, ImageIndex, ImageManifest, MediaType};
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::hash::{Hash, Hasher};
@@ -62,7 +63,10 @@ fn read_blob_image_index(blob_directory: &Path, descriptor: &Descriptor) -> anyh
 
 impl LocalOciImage {
     #[instrument(name = "load_images")]
-    pub fn from_oci_directory(directory: impl AsRef<Path> + Debug) -> anyhow::Result<Vec<Self>> {
+    pub fn from_oci_directory(
+        directory: impl AsRef<Path> + Debug,
+        platform_matcher: &PlatformMatcher,
+    ) -> anyhow::Result<Vec<Self>> {
         let directory = directory.as_ref();
         let blob_directory = directory.join("blobs").join("sha256");
 
@@ -76,6 +80,9 @@ impl LocalOciImage {
             let mut images = vec![];
             let manifest_iterator = progress::progress_iter("Reading Manifests", index.manifests().iter());
             for manifest_descriptor in manifest_iterator {
+                if !platform_matcher.matches_oci_spec_platform(manifest_descriptor.platform().as_ref()) {
+                    continue;
+                }
                 match manifest_descriptor.media_type() {
                     MediaType::ImageManifest => {
                         debug!("Reading image manifest from {}", manifest_descriptor.digest());
@@ -90,7 +97,8 @@ impl LocalOciImage {
                         let index =
                             read_blob_image_index(&blob_directory, manifest_descriptor).context("Reading index")?;
                         images.extend(
-                            Self::from_image_index(index, blob_directory.clone()).context("Parsing image index")?,
+                            Self::from_image_index(index, blob_directory.clone(), platform_matcher)
+                                .context("Parsing image index")?,
                         );
                     }
                     _ => {
@@ -110,20 +118,15 @@ impl LocalOciImage {
         }
     }
 
-    fn from_image_index(index: ImageIndex, blob_directory: PathBuf) -> anyhow::Result<Vec<Self>> {
+    fn from_image_index(
+        index: ImageIndex,
+        blob_directory: PathBuf,
+        platform_matcher: &PlatformMatcher,
+    ) -> anyhow::Result<Vec<Self>> {
         let mut images = vec![];
         for manifest_descriptor in index.manifests() {
-            match manifest_descriptor.platform() {
-                Some(platform) => match (platform.os(), platform.architecture()) {
-                    (Os::Linux, _) => {}
-                    (os, _) => {
-                        debug!("Skipping non-Linux platform manifest: {os}");
-                        continue;
-                    }
-                },
-                None => {
-                    continue;
-                }
+            if !platform_matcher.matches_oci_spec_platform(manifest_descriptor.platform().as_ref()) {
+                continue;
             }
             let manifest = read_blob_image_manifest(&blob_directory, manifest_descriptor)?;
             let img = Self::from_image_manifest(manifest, blob_directory.clone())

@@ -1,9 +1,10 @@
 use crate::index::{ImageItem, ImageItems};
 use crate::input::remote_image::RemoteImage;
 use crate::layer_combiner::LayerCombiner;
-use anyhow::Context;
+use anyhow::{bail, Context};
 use byte_unit::Byte;
 use clap::Parser;
+use globset::Glob;
 use input::InputImage;
 use itertools::Itertools;
 use memmap2::Mmap;
@@ -14,7 +15,7 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tracing::{info, info_span, instrument, Level};
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::layer::SubscriberExt;
@@ -26,13 +27,16 @@ mod input;
 mod io_utils;
 mod layer_combiner;
 mod output_image;
+mod platform_matcher;
 mod progress;
 #[cfg(test)]
 mod test_utils;
+pub mod location;
 
 use crate::input::local_image::LocalOciImage;
+use crate::platform_matcher::PlatformMatcher;
 use crate::progress::{display_bytes, progress_parallel_collect};
-use input::source::SourceImage;
+use location::Location;
 use output_image::stats::WrittenImageStats;
 use shadow_rs::shadow;
 use tracing_subscriber::filter::Directive;
@@ -44,9 +48,9 @@ shadow!(build);
 #[clap(version = build::CLAP_LONG_VERSION)]
 struct Args {
     /// Source image. e.g. `python:3.11`, `tensorflow/tensorflow:latest` or `oci://local/image/path`
-    source: SourceImage,
-    /// Directory to write the compressed image to.
-    output_dir: PathBuf,
+    source: Location,
+    /// Location to save image, e.g oci://directory/path/
+    output_dir: Location,
     /// Target size for layers
     #[arg(long, short)]
     target_size: Byte,
@@ -59,6 +63,9 @@ struct Args {
 
     #[arg(long, default_value = "14")]
     compression_level: i32,
+
+    #[arg(long, default_value = "linux/*")]
+    platform: Glob,
 }
 
 pub fn main() -> anyhow::Result<()> {
@@ -78,7 +85,13 @@ pub fn main() -> anyhow::Result<()> {
         .init();
     let args = Args::parse();
 
-    let output_dir = args.output_dir;
+    let output_dir = match args.output_dir {
+        Location::Oci(path) => path,
+        Location::Docker(_) => {
+            bail!("Docker registry output is not currently supported")
+        }
+    };
+
     let temp_dir = output_dir.join("temp");
     let target_size = args.target_size;
 
@@ -90,16 +103,18 @@ pub fn main() -> anyhow::Result<()> {
         .num_threads(args.concurrency.unwrap_or_default())
         .build_global()?;
 
+    let platform_matcher = PlatformMatcher::from_glob(args.platform)?;
+
     let results = match args.source {
-        SourceImage::Oci(path) => {
+        Location::Oci(path) => {
             info!("Reading images from OCI directory: {}", path.display());
-            let images = LocalOciImage::from_oci_directory(path)?;
+            let images = LocalOciImage::from_oci_directory(path, &platform_matcher)?;
             handle_input_images(images, &temp_dir, &output_image, target_size, args.compression_level)?
         }
-        SourceImage::Docker(reference) => {
+        Location::Docker(reference) => {
             info!("Reading images registry: {}", reference);
             let runtime = tokio::runtime::Runtime::new()?;
-            let images = RemoteImage::create_remote_images(runtime.handle(), reference)?;
+            let images = RemoteImage::create_remote_images(runtime.handle(), reference, &platform_matcher)?;
             handle_input_images(images, &temp_dir, &output_image, target_size, args.compression_level)?
         }
     };

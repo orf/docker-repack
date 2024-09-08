@@ -13,7 +13,6 @@ use std::io::Read;
 pub mod layers;
 pub mod local_image;
 pub mod remote_image;
-pub mod source;
 
 const IMAGE_DOCKER_LAYER_ZSTD_MEDIA_TYPE: &str = "application/vnd.docker.image.rootfs.diff.tar.zstd";
 const IMAGE_LAYER_ZSTD_MEDIA_TYPE: &str = "application/vnd.oci.image.layer.v1.tar+zstd";
