@@ -157,7 +157,7 @@ jobs:
           echo "output-dir=${{ env.output_dir }}" >> $GITHUB_OUTPUT
         shell: bash
         env:
-          source: "ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}-${{ matrix.target_size }}"
+          source: "ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}"
           output_dir: "oci/${{ matrix.target_size }}/"
 
       - name: Copy image
