@@ -13,7 +13,7 @@ jobs:
       id-token: write
 
     env:
-      RUNS: 25
+      RUNS: 2
 
     steps:
       - uses: actions/checkout@v4

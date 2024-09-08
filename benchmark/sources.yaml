@@ -5,10 +5,10 @@ sizes:
   - '500MB'
 
 upstream_images:
-  - upstream_image: "tensorflow/tensorflow:2.17.0-gpu"
-    destination: "tensorflow-2.17.0-gpu"
-  - upstream_image: "pytorch/pytorch:2.4.1-cuda11.8-cudnn9-devel"
-    destination: "pytorch-2.4.1-cuda11.8-cudnn9-devel"
+#  - upstream_image: "tensorflow/tensorflow:2.17.0-gpu"
+#    destination: "tensorflow-2.17.0-gpu"
+#  - upstream_image: "pytorch/pytorch:2.4.1-cuda11.8-cudnn9-devel"
+#    destination: "pytorch-2.4.1-cuda11.8-cudnn9-devel"
   - upstream_image: "nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04"
     destination: "nvidia-cuda-12.5.1-cudnn-devel-ubuntu20.04"
   - upstream_image: "neo4j:enterprise"
@@ -27,10 +27,11 @@ upstream_images:
     destination: "mathworks-matlab-r2024a"
   - upstream_image: "google/cloud-sdk:491.0.0"
     destination: "google-cloud-sdk-491.0.0"
-  - upstream_image: "google/deepsomatic:1.7.0-gpu"
-    destination: "google-deepsomatic-1.7.0-gpu"
+#  - upstream_image: "google/deepsomatic:1.7.0-gpu"
+#    destination: "google-deepsomatic-1.7.0-gpu"
   - upstream_image: "ollama/ollama:0.3.10"
     destination: "ollama-0.3.10"
+
 # Disabled: Very slow
 #  - upstream_image: "google/deepvariant:deepsomatic-v17_rc0_07012024-gpu"
 #    destination: "google-deepvariant-deepsomatic-v17_rc0_07012024-gpu"
