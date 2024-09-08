@@ -1,6 +1,7 @@
-import benchmark_data from "./data/benchmarks.json";
 import groupBy from "lodash.groupby";
 import { Octokit } from "@octokit/rest";
+import axios, { isCancel, AxiosError } from "axios";
+import AdmZip from "adm-zip";
 
 export interface BenchmarkImageTime {
   image: string;
@@ -19,21 +20,39 @@ export interface BenchmarkData {
   images: BenchmarkImage[];
 }
 
-const octokit = new Octokit();
-
 export async function parseBenchmarkData(): Promise<BenchmarkData> {
-    const resp = await octokit.actions.listArtifactsForRepo({
-        owner: "orf",
-        repo: "docker-repack",
-        name: "results"
-    });
-    throw new Error(JSON.stringify(resp.data.artifacts));
+  const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
+  const owner = "orf";
+  const repo = "docker-repack";
+  const resp = await octokit.actions.listArtifactsForRepo({
+    owner,
+    repo,
+    name: "results",
+  });
+  const artifact = resp.data.artifacts[0];
+  const artifact_response = await octokit.actions.downloadArtifact({
+    owner,
+    repo,
+    artifact_id: artifact.id,
+    archive_format: "zip",
+  });
+  const artifact_data = await axios.get(artifact_response.url, {
+    responseType: "arraybuffer",
+  });
+  const zipfile: Buffer = Buffer.from(artifact_data.data);
+  const zip = new AdmZip(zipfile);
+  const results = zip.getEntry("results.json");
+  if (results == null) {
+    throw new Error("results.json not found in zip");
+  }
+  const benchmark_data: any = JSON.parse(results.getData().toString("utf-8")!);
 
   const image_times: BenchmarkImageTime[] = benchmark_data.results.map(
-    (res) => {
+    (res: { parameters: { image: string; type: string }; mean: number }) => {
       return {
         image: res.parameters.image,
-        type: res.parameters.suffix,
+        type: res.parameters.type,
         time: res.mean,
       };
     },

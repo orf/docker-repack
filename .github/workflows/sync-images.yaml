@@ -155,14 +155,20 @@ jobs:
       - name: "Skopeo authenticate dockerhub"
         run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
 
+      - name: Copy image - ghcr
+        run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
+        shell: bash
+        env:
+          source: "docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}-original"
+          dest: "oci:image"
+
       - name: Repack
         id: repack
         run: |
-          ./docker-repack "docker://${{ env.source }}" "oci://${{ env.output_dir }}" --target-size="${{ matrix.target_size }}" --platform="linux/{amd64,arm64}"
+          ./docker-repack "oci://image" "oci://${{ env.output_dir }}" --target-size="${{ matrix.target_size }}" --platform="linux/{amd64,arm64}"
           echo "output-dir=${{ env.output_dir }}" >> $GITHUB_OUTPUT
         shell: bash
         env:
-          source: "ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}-original"
           output_dir: "oci/${{ matrix.target_size }}/"
 
       - name: Copy image - ghcr
