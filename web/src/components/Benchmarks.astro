@@ -1,0 +1,15 @@
+---
+import BenchmarkChart from "./BenchmarkChart"
+import {parseBenchmarkData} from "../benchmark_parser"
+import groupBy from "lodash.groupby"
+
+const fullData = parseBenchmarkData()
+// const flatData = fullData.images.flatMap((image) => image.times)
+
+// const grouped_data = groupBy(flatData, 'image')
+
+const dataset = fullData.images;
+
+---
+
+<BenchmarkChart dataset={dataset} client:only="react"/>

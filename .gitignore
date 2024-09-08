@@ -3,4 +3,3 @@ oci/
 *.txt
 .idea/
 compress.log
-web/results.json
