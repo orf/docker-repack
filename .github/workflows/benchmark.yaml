@@ -53,7 +53,7 @@ jobs:
         run: >-
           hyperfine "skopeo copy --image-parallel-copies=40 docker://${{ env.tag_prefix }}:{image}-{type} oci:/dev/shm/image" \
             --warmup 1 \
-            -L image original,${{ steps.images.outputs.result }} \
+            -L image ${{ steps.images.outputs.result }} \
             -L type original,${{ steps.sizes.outputs.result }} \
             --prepare "rm -rf /dev/shm/image/" \
             --cleanup "rm -rf /dev/shm/image/" \
