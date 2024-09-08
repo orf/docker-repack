@@ -63,7 +63,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: results
+          name: benchmark-results
           path: results.json
           retention-days: 5
           if-no-files-found: error

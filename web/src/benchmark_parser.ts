@@ -24,7 +24,8 @@ const octokit = new Octokit();
 export async function parseBenchmarkData(): Promise<BenchmarkData> {
     const resp = await octokit.actions.listArtifactsForRepo({
         owner: "orf",
-        repo: "docker-repack"
+        repo: "docker-repack",
+        name: "results"
     });
     throw new Error(JSON.stringify(resp.data.artifacts));
 
