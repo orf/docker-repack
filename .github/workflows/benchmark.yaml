@@ -93,9 +93,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
+      - run: cat results-*.json | jq '.' > results.json
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: results-*.json
+          path: results.json
           retention-days: 5
           if-no-files-found: error
