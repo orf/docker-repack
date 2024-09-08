@@ -137,7 +137,7 @@ jobs:
         target_size: ['50MB', '100MB', '200MB', '500MB']
 
     concurrency:
-      group: "push-${{ matrix.upstream_image }}"
+      group: "push-${{ matrix.upstream_image }}-${{ matrix.target_size }}"
       cancel-in-progress: false
 
     steps:
