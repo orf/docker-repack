@@ -99,16 +99,16 @@ jobs:
       - name: Download original - Docker
         run: skopeo copy --image-parallel-copies=10 docker://${{ matrix.upstream_image }} oci:original
 
-      - name: Compress with zstd
-        run: skopeo copy --image-parallel-copies=10 oci:original dir:original-zstd --dest-compress --dest-compress-format=zstd
+#      - name: Compress with zstd
+#        run: skopeo copy --image-parallel-copies=10 oci:original dir:original-zstd --dest-compress --dest-compress-format=zstd
 
-      - name: Push zstd image
-        id: push-zstd
-        uses: ./.github/actions/push-image
-        with:
-          upstream-image: ${{ matrix.upstream_image }}
-          tag-suffix: '-zstd'
-          source: 'dir:original-zstd/'
+#      - name: Push zstd image
+#        id: push-zstd
+#        uses: ./.github/actions/push-image
+#        with:
+#          upstream-image: ${{ matrix.upstream_image }}
+#          tag-suffix: '-zstd'
+#          source: 'dir:original-zstd/'
 
       - name: Push Original image
         id: push-original
