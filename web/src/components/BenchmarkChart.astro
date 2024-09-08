@@ -1,32 +1,28 @@
 ---
-import ReactBenchmarkChart from "./ReactBenchmarkChart"
-import {type BenchmarkImage} from "../benchmark_parser"
+import ReactBenchmarkChart from "./ReactBenchmarkChart";
+import { type BenchmarkImage } from "../benchmark_parser";
 
 interface Props {
-    image: BenchmarkImage
+  image: BenchmarkImage;
 }
 
-const {image} = Astro.props
+const { image } = Astro.props;
 
 const fastest = Math.min(...image.times.map((time) => time.time));
 const original = image.times.find((time) => time.type === "original")!.time;
 ---
 
-<h1 class="text-2xl font-bold">{image.name} ({image.times_faster}x faster)</h1>
+<h1 class="text-2xl font-bold">
+  <a id={image.name_slug}>
+    <code class="p-1 font-mono overflow-x-auto">{image.name}</code> ({
+      image.times_faster
+    }x faster)
+  </a>
+</h1>
 
-<p>Fastest: {fastest}</p>
-<p>Original: {original}</p>
+<p>Original: {original.toFixed(2)} seconds</p>
+<p>Fastest: {fastest.toFixed(2)} seconds</p>
 
 <div class="w-1/2 h-96">
-  <ReactBenchmarkChart
-   types={["original", image.fastest_type]}
-   dataset={[image]}
-   client:only="react"
-  />
-</div>
-<div class="w-1/2 h-96">
-  <ReactBenchmarkChart
-      dataset={[image]}
-      client:only="react"
-  />
+  <ReactBenchmarkChart image={image} client:only="react" />
 </div>

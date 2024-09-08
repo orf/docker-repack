@@ -6,7 +6,7 @@ use oci_client::manifest::{
     IMAGE_LAYER_MEDIA_TYPE, IMAGE_LAYER_NONDISTRIBUTABLE_GZIP_MEDIA_TYPE, IMAGE_LAYER_NONDISTRIBUTABLE_MEDIA_TYPE,
 };
 use oci_spec::image::{ImageConfiguration, MediaType};
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Write};
 use std::hash::Hash;
 use std::io::Read;
 
@@ -37,6 +37,25 @@ pub fn get_layer_media_type(value: &str) -> Option<MediaType> {
 #[derive(Clone, Eq, PartialEq)]
 pub struct Platform {
     config: ImageConfiguration,
+}
+
+impl Platform {
+    pub fn file_key(&self) -> anyhow::Result<String> {
+        let mut f = String::new();
+        f.write_fmt(format_args!("{}-{}", self.config.os(), self.config.architecture()))?;
+        if let Some(variant) = self.config.variant() {
+            f.write_fmt(format_args!("-{}", variant))?;
+        }
+        if let Some(os_version) = self.config.os_version() {
+            f.write_fmt(format_args!("-{}", os_version))?;
+        }
+        if let Some(os_features) = self.config.os_features() {
+            for feature in os_features {
+                f.write_fmt(format_args!("-{}", feature))?;
+            }
+        }
+        Ok(f)
+    }
 }
 
 impl Display for Platform {

@@ -12,7 +12,10 @@ const dataset = fullData.images.sort((a, b) => b.times_faster - a.times_faster);
   {
     dataset.map((image) => (
       <div>
-        {image.name} - {image.times_faster}x faster
+        <a href={"#" + image.name_slug}>
+          <code class="p-1 font-mono overflow-x-auto">{image.name}</code>
+           - {image.times_faster}x faster
+        </a>
       </div>
     ))
   }

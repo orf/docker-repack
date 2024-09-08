@@ -7,8 +7,10 @@ use tar::{Archive, Header};
 use zstd::bulk::Compressor;
 use zstd::zstd_safe;
 
+use anyhow::Context;
 #[cfg(test)]
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 const EMPTY_SHA: [u8; 32] = [
     227, 176, 196, 66, 152, 252, 28, 20, 154, 251, 244, 200, 153, 111, 185, 36, 39, 174, 65, 228, 100, 155, 147, 76,
@@ -21,8 +23,11 @@ pub struct ImageItems<T: AsRef<[u8]>> {
 }
 
 impl ImageItems<Mmap> {
-    pub fn from_file(path: impl AsRef<Path>, total_items: usize) -> anyhow::Result<ImageItems<Mmap>> {
-        let combined_input_file = File::options().read(true).open(path)?;
+    pub fn from_file(path: impl AsRef<Path> + Debug, total_items: usize) -> anyhow::Result<ImageItems<Mmap>> {
+        let combined_input_file = File::options()
+            .read(true)
+            .open(&path)
+            .with_context(|| format!("Loading image items from file {path:?}"))?;
         let data = unsafe { memmap2::MmapOptions::new().map(&combined_input_file) }?;
         assert_ne!(data.len(), 0);
 

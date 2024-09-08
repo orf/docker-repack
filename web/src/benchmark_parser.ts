@@ -1,7 +1,17 @@
 import groupBy from "lodash.groupby";
 import { Octokit } from "@octokit/rest";
-import axios, { isCancel, AxiosError } from "axios";
+import axios from "axios";
 import AdmZip from "adm-zip";
+// @ts-ignore
+import sources from "../../benchmark/sources.yaml";
+
+const destinationToUpstream = Object.fromEntries(
+  // @ts-ignore
+  sources.upstream_images.map(({ upstream_image, destination }) => [
+    destination,
+    upstream_image,
+  ]),
+);
 
 export interface BenchmarkImageTime {
   image: string;
@@ -12,6 +22,7 @@ export interface BenchmarkImageTime {
 
 export interface BenchmarkImage {
   name: string;
+  name_slug: string;
   times_faster: number;
   fastest_type: string;
   times: BenchmarkImageTime[];
@@ -72,15 +83,20 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
       const fastest = sorted_by_speed[0];
       const original = times.find((time) => time.type === "original")!;
 
-      const percentage_faster = Number((original.time / fastest.time).toFixed(1));
+      const percentage_faster = Number(
+        (original.time / fastest.time).toFixed(1),
+      );
 
       const sorted_times = [
-          original,
-          ...times.filter((time) => time.type !== "original").sort((a, b) => a.type.localeCompare(b.type)),
-      ]
+        original,
+        ...times
+          .filter((time) => time.type !== "original")
+          .sort((a, b) => a.type.localeCompare(b.type)),
+      ];
 
       return {
-        name: image,
+        name: destinationToUpstream[image],
+        name_slug: image.replaceAll(".", "-"),
         times: sorted_times,
         fastest_type: fastest.type,
         times_faster: percentage_faster,

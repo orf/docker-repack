@@ -163,8 +163,8 @@ fn handle_input_images<T: InputImage>(
         "Loading and merging",
         images.into_par_iter().map(|input_image| {
             let image_digest = input_image.image_digest();
-            let platform = input_image.platform();
-            let combined_path = temp_dir.join(format!("combined-{platform}-{image_digest}.tar"));
+            let platform_key = input_image.platform().file_key()?;
+            let combined_path = temp_dir.join(format!("combined-{platform_key}-{image_digest}.tar"));
             let image_items = load_and_merge_image(&input_image, &combined_path)?;
             Ok((input_image, image_items))
         }),
@@ -287,7 +287,8 @@ fn load_and_merge_image(input_image: &impl InputImage, combined_path: &Path) -> 
         .create(true)
         .truncate(true)
         .write(true)
-        .open(combined_path)?;
+        .open(&combined_path)
+        .with_context(|| format!("Opening file {combined_path:?}"))?;
     let mut combiner = LayerCombiner::new(combined_output_file);
     let layer_iterator = input_image.layers_from_manifest()?;
     for input_layer in progress::progress_iter("Merging Layers", layer_iterator) {

@@ -10,32 +10,28 @@ import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
+import { useState } from "react";
 
 export interface BenchmarkChartProps {
-  dataset: BenchmarkImage[];
-  types?: string[];
+  image: BenchmarkImage;
 }
 
 export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
-  const { dataset, types } = props;
+  const { image } = props;
 
-  const allImageTypes = new Set(
-    dataset.flatMap((image) => image.times.map((time) => time.type)),
-  );
+  const [showAll, setShowAll] = useState(false);
+
+  const allImageTypes = new Set(image.times.map((time) => time.type));
   const data = [];
-  for (const image of dataset) {
-    const times = Object.fromEntries(
-      image.times.map((time: BenchmarkImageTime) => [time.type, time.time]),
-    );
+  const times = Object.fromEntries(
+    image.times.map((time: BenchmarkImageTime) => [time.type, time.time]),
+  );
+  data.push({ image: image.name, ...times });
 
-    data.push({ image: image.name, ...times });
-  }
-
-  if (types !== undefined) {
+  if (!showAll) {
     allImageTypes.clear();
-    for (const type of types) {
-      allImageTypes.add(type);
-    }
+    allImageTypes.add("original");
+    allImageTypes.add(image.fastest_type);
   }
 
   const series = [...allImageTypes].map((key) => ({
@@ -45,6 +41,7 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
 
   return (
     <>
+      <button onClick={() => setShowAll(!showAll)}>Show All</button>
       <BarChart
         dataset={data}
         xAxis={[{ scaleType: "band", dataKey: "image" }]}
