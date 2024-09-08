@@ -34,7 +34,7 @@ const maxDownloads = 5;
 <Layout title="Welcome to Astro.">
   <h1 class="text-3xl">Docker Repack</h1>
   <p class="m-1">This:</p>
-  <PullComponent bandwidth={bandwidth} layers={slowLayers} max_downloads={maxDownloads} client:only/>
+  <PullComponent bandwidth={bandwidth} layers={slowLayers} max_downloads={maxDownloads} client:only="react"/>
   <p class="m-1">Turns into this:</p>
-  <PullComponent bandwidth={bandwidth} layers={fastLayers} max_downloads={maxDownloads} client:only/>
+  <PullComponent bandwidth={bandwidth} layers={fastLayers} max_downloads={maxDownloads} client:only="react"/>
 </Layout>
