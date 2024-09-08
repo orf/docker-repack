@@ -37,6 +37,10 @@ jobs:
       matrix:
         image: ${{ fromJSON(needs.matrix.outputs.destinations) }}
 
+    concurrency:
+      group: "benchmark-${{ matrix.image }}"
+      cancel-in-progress: false
+
     env:
       RUNS: 30
 
