@@ -1,4 +1,4 @@
-name: Repack Upstream Images
+name: Sync Upstream Images
 
 on:
   workflow_dispatch:
@@ -166,7 +166,7 @@ jobs:
           chmod: 0755
 
       - name: repack-${{ matrix.target_size }}
-        id: repack-${{ matrix.target_size }}
+        id: repack
         uses: ./.github/actions/repack-image-benchmark
         with:
           target-size: '${{ matrix.target_size }}'
