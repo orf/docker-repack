@@ -24,3 +24,9 @@ const original = image.times.find((time) => time.type === "original")!.time;
    client:only="react"
   />
 </div>
+<div class="w-1/2 h-96">
+  <ReactBenchmarkChart
+      dataset={[image]}
+      client:only="react"
+  />
+</div>

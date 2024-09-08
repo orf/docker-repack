@@ -102,7 +102,7 @@ pub fn main() -> anyhow::Result<()> {
         .thread_name(|i| format!("thread-{}", i))
         .num_threads(args.concurrency.unwrap_or_default())
         .build_global()?;
-
+    info!("Using {} threads", rayon::current_num_threads());
     let platform_matcher = PlatformMatcher::from_glob(args.platform)?;
 
     let results = match args.source {

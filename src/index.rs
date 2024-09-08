@@ -90,7 +90,6 @@ impl<'a> ImageItem<'a> {
             (0, EMPTY_SHA)
         } else {
             let compressed = compressor.compress(content)?;
-            //
             #[cfg(feature = "zstd-experimental")]
             let header_size =
                 unsafe { zstd_safe::zstd_sys::ZSTD_frameHeaderSize(compressed.as_ptr() as *const _, compressed.len()) };

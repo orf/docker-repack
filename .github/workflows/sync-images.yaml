@@ -168,7 +168,7 @@ jobs:
       - name: Repack
         id: repack
         run: |
-          ./docker-repack "oci://image" "oci://${{ env.output_dir }}" --target-size="${{ matrix.target_size }}" --platform="linux/{amd64,arm64}"
+          ./docker-repack "oci://image" "oci://${{ env.output_dir }}" --target-size="${{ matrix.target_size }}" --platform="linux/{amd64,arm64}" --concurrency=4
           echo "output-dir=${{ env.output_dir }}" >> $GITHUB_OUTPUT
         shell: bash
         env:

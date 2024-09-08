@@ -70,13 +70,18 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
         .sort((a, b) => a.time - b.time);
 
       const fastest = sorted_by_speed[0];
-      const original = times.find((time) => time.type === "original")!.time;
+      const original = times.find((time) => time.type === "original")!;
 
-      const percentage_faster = Number((original / fastest.time).toFixed(1));
+      const percentage_faster = Number((original.time / fastest.time).toFixed(1));
+
+      const sorted_times = [
+          original,
+          ...times.filter((time) => time.type !== "original").sort((a, b) => a.type.localeCompare(b.type)),
+      ]
 
       return {
         name: image,
-        times,
+        times: sorted_times,
         fastest_type: fastest.type,
         times_faster: percentage_faster,
       };
