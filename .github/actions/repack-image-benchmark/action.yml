@@ -28,7 +28,7 @@ runs:
         OUTPUT_DIR: "${{ inputs.output }}/${{ inputs.target-size }}/"
 
     - name: Copy image
-      run: skopeo copy --all --image-parallel-copies=10 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
+      run: skopeo copy --all --image-parallel-copies=20 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
       shell: bash
       env:
         source: 'oci:${{ steps.repack.outputs.output-dir }}'
