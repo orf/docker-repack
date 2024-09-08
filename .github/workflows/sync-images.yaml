@@ -153,11 +153,12 @@ jobs:
       - name: Repack
         id: repack
         run: |
-          ./docker-repack "docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}" "oci://${{ env.OUTPUT_DIR }}" --target-size="${{ matrix.target_size }}" --platform=linux/amd64
-          echo "output-dir=${{ env.OUTPUT_DIR }}" >> $GITHUB_OUTPUT
+          ./docker-repack "" "oci://${{ env.source }}" --target-size="${{ matrix.target_size }}" --platform=linux/amd64
+          echo "output-dir=${{ env.output_dir }}" >> $GITHUB_OUTPUT
         shell: bash
         env:
-          OUTPUT_DIR: "oci/${{ matrix.target_size }}/"
+          source: "docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}-${{ matrix.target_size }}"
+          output_dir: "oci/${{ matrix.target_size }}/"
 
       - name: Copy image
         run: skopeo copy --all --image-parallel-copies=10 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
