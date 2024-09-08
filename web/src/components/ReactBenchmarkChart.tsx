@@ -13,12 +13,13 @@ import "@fontsource/roboto/700.css";
 
 export interface BenchmarkChartProps {
   dataset: BenchmarkImage[];
+  types?: string[];
 }
 
-export default function BenchmarkChart(props: BenchmarkChartProps) {
-  const { dataset } = props;
+export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
+  const { dataset, types } = props;
 
-  const images = new Set(
+  const allImageTypes = new Set(
     dataset.flatMap((image) => image.times.map((time) => time.type)),
   );
   const data = [];
@@ -30,7 +31,14 @@ export default function BenchmarkChart(props: BenchmarkChartProps) {
     data.push({ image: image.image, ...times });
   }
 
-  const series = [...images].map((key) => ({
+  if (types !== undefined) {
+    allImageTypes.clear();
+    for (const type of types) {
+      allImageTypes.add(type);
+    }
+  }
+
+  const series = [...allImageTypes].map((key) => ({
     dataKey: key,
     label: key,
   }));
@@ -41,8 +49,6 @@ export default function BenchmarkChart(props: BenchmarkChartProps) {
         dataset={data}
         xAxis={[{ scaleType: "band", dataKey: "image" }]}
         series={series}
-        width={1000}
-        height={500}
       />
     </>
   );

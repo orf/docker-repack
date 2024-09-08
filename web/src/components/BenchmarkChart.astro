@@ -1,0 +1,20 @@
+---
+import ReactBenchmarkChart from "./ReactBenchmarkChart"
+import {type BenchmarkImage} from "../benchmark_parser"
+
+interface Props {
+    image: BenchmarkImage
+}
+
+const {image} = Astro.props
+---
+
+<h1 class="text-2xl font-bold">{image.image}</h1>
+
+<div class="w-1/2 h-96">
+  <ReactBenchmarkChart
+   types={["original", "zstd", "50MB"]}
+   dataset={[image]}
+   client:only="react"
+  />
+</div>

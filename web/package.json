@@ -28,6 +28,8 @@
     "typescript": "^5.5.4"
   },
   "devDependencies": {
-    "@types/lodash.groupby": "^4.6.9"
+    "@types/lodash.groupby": "^4.6.9",
+    "prettier": "^3.3.3",
+    "prettier-plugin-astro": "^0.14.1"
   }
 }
