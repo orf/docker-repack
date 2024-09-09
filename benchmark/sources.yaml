@@ -32,11 +32,9 @@ upstream_images:
     destination: "mathworks-matlab-r2024a"
   - upstream_image: "google/cloud-sdk:491.0.0"
     destination: "google-cloud-sdk-491.0.0"
-  - upstream_image: "google/deepsomatic:1.7.0"
-    destination: "google-deepsomatic-1.7.0"
+  - upstream_image: "google/deepvariant:b350512297c12-gpu"
+    destination: "google-deepvariant-gpu"
+  - upstream_image: "google/deepvariant:b350512297c12"
+    destination: "google-deepvariant-cpu"
   - upstream_image: "ollama/ollama:0.3.10"
     destination: "ollama-0.3.10"
-
-# Disabled: Very slow
-#  - upstream_image: "google/deepvariant:deepsomatic-v17_rc0_07012024-gpu"
-#    destination: "google-deepvariant-deepsomatic-v17_rc0_07012024-gpu"
