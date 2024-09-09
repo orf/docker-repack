@@ -100,6 +100,12 @@ jobs:
         run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         env:
           source: docker://${{ matrix.upstream_image }}
+          dest: oci:image
+
+      - name: Copy image
+        run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
+        env:
+          source: oci:image
           dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.destination }}-original
 
   repack-image:
