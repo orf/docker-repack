@@ -103,7 +103,7 @@ jobs:
           dest: oci:image
 
       - name: Copy image
-        run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
+        run: skopeo copy --all --image-parallel-copies=5 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         env:
           source: oci:image
           dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.destination }}-original
