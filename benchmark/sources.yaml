@@ -32,8 +32,8 @@ upstream_images:
     destination: "mathworks-matlab-r2024a"
   - upstream_image: "google/cloud-sdk:491.0.0"
     destination: "google-cloud-sdk-491.0.0"
-  - upstream_image: "google/deepsomatic:1.7.0-gpu"
-    destination: "google-deepsomatic-1.7.0-gpu"
+  - upstream_image: "google/deepsomatic:1.6.1-gpu"
+    destination: "google-deepsomatic-1.6.1-gpu"
   - upstream_image: "ollama/ollama:0.3.10"
     destination: "ollama-0.3.10"
 
