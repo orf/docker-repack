@@ -36,5 +36,7 @@ upstream_images:
     destination: "google-deepvariant-gpu"
   - upstream_image: "google/deepvariant:b350512297c12"
     destination: "google-deepvariant-cpu"
+  - upstream_image: "google/deepsomatic:1.7.0"
+    destination: "google-deepsomatic-1.7.0"
   - upstream_image: "ollama/ollama:0.3.10"
     destination: "ollama-0.3.10"
