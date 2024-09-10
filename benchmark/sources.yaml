@@ -1,12 +1,7 @@
 sizes:
-  - '25MB'
   - '50MB'
-  - '75MB'
   - '100MB'
-  - '150MB'
   - '200MB'
-  - '300MB'
-  - '400MB'
   - '500MB'
 
 upstream_images:
@@ -35,12 +30,8 @@ upstream_images:
   - upstream_image: "google/deepvariant:b350512297c12-gpu"
     destination: "google-deepvariant-gpu"
     disk: true
-  - upstream_image: "google/deepvariant:b350512297c12"
-    destination: "google-deepvariant-cpu"
-  - upstream_image: "google/deepsomatic:1.7.0"
-    destination: "google-deepsomatic-1.7.0"
-  - upstream_image: "google/deepsomatic:1.6.1-gpu"
-    destination: "google-deepsomatic-1.6.1-gpu"
+  - upstream_image: "google/deepsomatic:1.7.0-gpu"
+    destination: "google-deepsomatic-1.7.0-gpu"
     disk: true
   - upstream_image: "ollama/ollama:0.3.10"
     destination: "ollama-0.3.10"
