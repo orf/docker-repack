@@ -42,7 +42,7 @@ jobs:
       cancel-in-progress: false
 
     env:
-      RUNS: 50
+      RUNS: 15
       BENCHMARK_DIR: "${{ matrix.disk && '/tmp/image' || '/dev/shm/image'  }}"
       HYPERFINE_FLAGS: "--ignore-failure"
 #      HYPERFINE_FLAGS: "${{ matrix.ignore-failure && '--ignore-failure' || ''  }}"
