@@ -43,8 +43,20 @@ jobs:
 
     env:
       RUNS: 50
+      #BENCHMARK_DIR: /dev/shm/image
+      BENCHMARK_DIR: /tmp/image
 
     steps:
+      - name: Disk space before
+        run: df -h
+      - name: Maximize build space
+        shell: bash
+        run: |
+          sudo rm -rf /usr/share/dotnet/* &
+          sudo rm -rf /usr/local/lib/android/* &
+      - name: Disk space after
+        run: df -h
+
       - uses: actions/checkout@v4
       - name: install skopeo
         uses: jaxxstorm/action-install-gh-release@v1
@@ -68,12 +80,12 @@ jobs:
 
       - name: Run Benchmark
         run: >-
-          hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.tag_prefix }}:{image}-{type} oci:/dev/shm/image" \
+          hyperfine "skopeo copy --image-parallel-copies=10 docker://${{ env.tag_prefix }}:{image}-{type} oci:${{ env.BENCHMARK_DIR }}" \
             --warmup 1 --show-output \
             -L image ${{ matrix.image }} \
             -L type original,${{ needs.matrix.outputs.sizes }} \
-            --prepare "rm -rf /dev/shm/image/" \
-            --cleanup "rm -rf /dev/shm/image/" \
+            --prepare "rm -rf ${{ env.BENCHMARK_DIR }}/" \
+            --cleanup "rm -rf ${{ env.BENCHMARK_DIR }}/" \
             --runs="${{ env.RUNS }}" --export-json=results-${{ matrix.image }}.json --shell=none
         env:
           tag_prefix: "ghcr.io/${{ github.repository }}/demo"
