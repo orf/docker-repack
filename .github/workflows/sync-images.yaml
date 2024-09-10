@@ -103,10 +103,18 @@ jobs:
           dest: oci:image
 
       - name: Copy image
-        run: skopeo copy --all -q --debug --retry-times=3 --image-parallel-copies=1 "${{ env.source }}" "${{ env.dest }}"
+        run: skopeo copy --all --retry-times=3 --image-parallel-copies=1 "${{ env.source }}" "${{ env.dest }}"
         env:
           source: oci:image
           dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.destination }}-original
+
+      - name: Copy image - dockerhub
+        run: skopeo copy --all --retry-times=3 --image-parallel-copies=1  "${{ env.source }}" "${{ env.dest }}"
+        shell: bash
+        env:
+          source: oci:image
+          dest: docker://docker.io/orfal/docker-repack-demo:${{ matrix.destination }}-original
+
 
   repack-image:
     runs-on: ubuntu-latest
