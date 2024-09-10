@@ -96,19 +96,22 @@ jobs:
       - name: "Skopeo authenticate ghcr.io"
         run: skopeo login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
-      - name: Copy image
+      - name: "Skopeo authenticate dockerhub"
+        run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
+
+      - name: Download image
         run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         env:
           source: docker://${{ matrix.upstream_image }}
           dest: oci:image
 
-      - name: Copy image
+      - name: Upload image - ghcri
         run: skopeo copy --all --retry-times=3 --image-parallel-copies=1 "${{ env.source }}" "${{ env.dest }}"
         env:
           source: oci:image
           dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.destination }}-original
 
-      - name: Copy image - dockerhub
+      - name: Upload image - dockerhub
         run: skopeo copy --all --retry-times=3 --image-parallel-copies=1  "${{ env.source }}" "${{ env.dest }}"
         shell: bash
         env:
@@ -172,7 +175,7 @@ jobs:
       - name: "Skopeo authenticate dockerhub"
         run: skopeo login --username ${{ secrets.DOCKER_HUB_USER }} --password ${{ secrets.DOCKER_HUB_PAT }} docker.io
 
-      - name: Copy image - ghcr
+      - name: Download image - ghcr
         run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         shell: bash
         env:
@@ -188,14 +191,14 @@ jobs:
         env:
           output_dir: "oci/${{ matrix.target_size }}/"
 
-      - name: Copy image - ghcr
+      - name: Upload image - ghcr
         run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         shell: bash
         env:
           source: 'oci:${{ steps.repack.outputs.output-dir }}'
           dest: docker://ghcr.io/${{ github.repository }}/demo:${{ matrix.image }}-${{ matrix.target_size }}
 
-      - name: Copy image - dockerhub
+      - name: Upload image - dockerhub
         run: skopeo copy --all --image-parallel-copies=40 --retry-times=3 "${{ env.source }}" "${{ env.dest }}"
         shell: bash
         env:
