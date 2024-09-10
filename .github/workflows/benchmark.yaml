@@ -44,7 +44,8 @@ jobs:
     env:
       RUNS: 50
       BENCHMARK_DIR: "${{ matrix.disk && '/tmp/image' || '/dev/shm/image'  }}"
-      HYPERFINE_FLAGS: "${{ matrix.ignore-failure && '--ignore-failure' || ''  }}"
+      HYPERFINE_FLAGS: "--ignore-failure"
+#      HYPERFINE_FLAGS: "${{ matrix.ignore-failure && '--ignore-failure' || ''  }}"
 
     steps:
       - name: Disk space before
