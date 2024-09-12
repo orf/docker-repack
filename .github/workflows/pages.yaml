@@ -41,6 +41,7 @@ jobs:
         working-directory: web/
         env:
           SITE_PREFIX: ${{ steps.pages.outputs.base_path }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
