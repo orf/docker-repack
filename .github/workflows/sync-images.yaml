@@ -118,6 +118,14 @@ jobs:
           source: oci:image
           dest: docker://docker.io/orfal/docker-repack-demo:${{ matrix.destination }}-original
 
+      - run: skopeo inspect oci:image > manifest-${{ matrix.destination }}-original.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manifest-${{ matrix.destination }}-original
+          path: manifest-${{ matrix.destination }}-original.json
+          retention-days: 1
+          if-no-files-found: error
 
   repack-image:
     runs-on: ubuntu-latest
@@ -204,3 +212,28 @@ jobs:
         env:
           source: 'oci:${{ steps.repack.outputs.output-dir }}'
           dest: docker://docker.io/orfal/docker-repack-demo:${{ matrix.image }}-${{ matrix.target_size }}
+
+      - run: skopeo inspect oci:${{ steps.repack.outputs.output-dir }} > manifest-${{ matrix.image }}-${{ matrix.target_size }}.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manifest-${{ matrix.image }}-${{ matrix.target_size }}
+          path: manifest-${{ matrix.image }}-${{ matrix.target_size }}.json
+          retention-days: 1
+          if-no-files-found: error
+
+  create-artifact:
+    runs-on: ubuntu-latest
+    needs:
+      - repack-image
+      - sync-original-images
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-manifests
+          path: manifest-*.json
+          retention-days: 5
+          if-no-files-found: error
