@@ -1,9 +1,10 @@
 import groupBy from "lodash.groupby";
-import { Octokit } from "@octokit/rest";
 import axios from "axios";
 import AdmZip from "adm-zip";
 // @ts-ignore
 import sources from "../../benchmark/sources.yaml";
+import { getArtifact, githubClient } from "./github_client.ts";
+import { getManifests, type Layer } from "./manifest_parser.ts";
 
 const destinationToUpstream = Object.fromEntries(
   // @ts-ignore
@@ -18,6 +19,8 @@ export interface BenchmarkImageTime {
   // type: "original" | "zstd" | "25MB" | "50MB" | "100MB" | "200MB";
   type: string;
   time: number;
+  total_size: number;
+  layers: Layer[];
 }
 
 export interface BenchmarkImage {
@@ -33,27 +36,9 @@ export interface BenchmarkData {
 }
 
 export async function parseBenchmarkData(): Promise<BenchmarkData> {
-  const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+  const manifests = await getManifests();
 
-  const owner = "orf";
-  const repo = "docker-repack";
-  const resp = await octokit.actions.listArtifactsForRepo({
-    owner,
-    repo,
-    name: "benchmark-results",
-  });
-  const artifact = resp.data.artifacts[0];
-  const artifact_response = await octokit.actions.downloadArtifact({
-    owner,
-    repo,
-    artifact_id: artifact.id,
-    archive_format: "zip",
-  });
-  const artifact_data = await axios.get(artifact_response.url, {
-    responseType: "arraybuffer",
-  });
-  const zipfile: Buffer = Buffer.from(artifact_data.data);
-  const zip = new AdmZip(zipfile);
+  const zip = await getArtifact("benchmark-results");
   const results = zip.getEntry("results.json");
   if (results == null) {
     throw new Error("results.json not found in zip");
@@ -62,16 +47,26 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
 
   const image_times: BenchmarkImageTime[] = benchmark_data.results.map(
     (res: { parameters: { image: string; type: string }; mean: number }) => {
+      const manifestKey = `${res.parameters.image}-${res.parameters.type}`;
+      const manifest = manifests[manifestKey];
+      if (manifest === undefined) {
+          return null
+      }
       return {
         image: res.parameters.image,
         type: res.parameters.type,
         time: res.mean,
+        total_size: manifest.reduce(
+          (acc, layer) => acc + layer.size,
+          0,
+        ),
+        layers: manifest,
       };
     },
-  );
+  ).filter((x: BenchmarkImageTime | null) => x !== null);
   const mapped = groupBy(image_times, (time) => time.image);
-  const parsed: BenchmarkImage[] = Object.entries(mapped).map(
-    ([image, times]) => {
+  const parsed: BenchmarkImage[] = Object.entries(mapped)
+    .map(([image, times]) => {
       if (times === undefined) {
         throw new Error("times is undefined");
       }
@@ -89,10 +84,12 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
 
       const sorted_times = [
         original,
-        ...times
-          .filter((time) => time.type !== "original")
-          .sort((a, b) => a.type.localeCompare(b.type)),
+        ...times.filter((time) => time.type !== "original"),
       ];
+
+      if (destinationToUpstream[image] === undefined) {
+        return null;
+      }
 
       return {
         name: destinationToUpstream[image],
@@ -101,8 +98,8 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
         fastest_type: fastest.type,
         times_faster: percentage_faster,
       };
-    },
-  );
+    })
+    .filter((x) => x !== null);
   return {
     images: parsed,
   };

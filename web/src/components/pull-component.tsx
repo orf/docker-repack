@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { humanFileSize } from "../utils.ts";
 
 export interface Layer {
   bytes: number;
@@ -22,7 +23,7 @@ function updatePullState(
     return layer_state;
   }
   // vary bytes_per_tick by up to 25% to simulate network jitter
-  bytes_per_tick *= 0.70 + Math.random() * 0.3;
+  bytes_per_tick *= 0.7 + Math.random() * 0.3;
   const new_bytes_done = layer_state.bytes_done + bytes_per_tick;
   let done = false;
   if (new_bytes_done >= layer_state.layer.bytes) {
@@ -46,13 +47,6 @@ function updatePullState(
 // 2fa7159a8e74: Waiting
 // 2d3256a435e2: Waiting
 // 8d76c12bea0d: Waiting
-
-function humanFileSize(size: number): string {
-  const i = size == 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
-  return (
-    +(size / Math.pow(1024, i)).toFixed(2) + ["B", "kB", "MB", "GB", "TB"][i]
-  );
-}
 
 function LayerPullComponent({ pull }: { pull: LayerPullState }) {
   const prefix = pull.layer.digest.slice(0, 12);
@@ -115,11 +109,12 @@ export default function PullComponent({
 
   return (
     <>
-      <div>{(elapsed / 1000).toFixed(1)} seconds</div>
       <pre>
         {state.map((layer, i) => (
           <LayerPullComponent key={i} pull={layer} />
         ))}
+        {"\n"}
+        Total Time: {(elapsed / 1000).toFixed(1)} seconds{"\n"}
       </pre>
     </>
   );

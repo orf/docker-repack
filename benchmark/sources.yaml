@@ -33,5 +33,3 @@ upstream_images:
   - upstream_image: "google/deepsomatic:1.7.0-gpu"
     destination: "google-deepsomatic-1.7.0-gpu"
     disk: true
-  - upstream_image: "ollama/ollama:0.3.10"
-    destination: "ollama-0.3.10"

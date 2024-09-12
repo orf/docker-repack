@@ -1,14 +1,15 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import PullComponent, {type Layer} from "../components/pull-component"
+import Terminal from "../components/Terminal.astro";
+import PullComponent, { type Layer } from "../components/pull-component";
 import crypto from "crypto";
 
 function sha256Hash(message: string) {
-  return crypto.createHash('sha256').update(message).digest('hex');
+  return crypto.createHash("sha256").update(message).digest("hex");
 }
 
-function make_layer(idx: number, size_mb: number) : Layer {
-  return {bytes: size_mb * 1024 * 1024, digest: sha256Hash(idx.toString())}
+function make_layer(idx: number, size_mb: number): Layer {
+  return { bytes: size_mb * 1024 * 1024, digest: sha256Hash(idx.toString()) };
 }
 
 const slowLayers = [
@@ -33,8 +34,31 @@ const maxDownloads = 5;
 
 <Layout title="Welcome to Astro.">
   <h1 class="text-3xl">Docker Repack</h1>
-  <p class="m-1">This:</p>
-  <PullComponent bandwidth={bandwidth} layers={slowLayers} max_downloads={maxDownloads} client:only="react"/>
-  <p class="m-1">Turns into this:</p>
-  <PullComponent bandwidth={bandwidth} layers={fastLayers} max_downloads={maxDownloads} client:only="react"/>
+  <p>Docker repack rewrites Docker images to optimize for faster pulls.</p>
+
+  <div class="columns-2 mb-2">
+    <div>
+      <p class="m-1">This:</p>
+      <Terminal command="docker pull original">
+        <PullComponent
+          bandwidth={bandwidth}
+          layers={slowLayers}
+          max_downloads={maxDownloads}
+          client:only="react"
+        />
+      </Terminal>
+    </div>
+
+    <div>
+      <p class="m-1">Turns into this:</p>
+      <Terminal command="docker pull repacked">
+        <PullComponent
+          bandwidth={bandwidth}
+          layers={fastLayers}
+          max_downloads={maxDownloads}
+          client:only="react"
+        />
+      </Terminal>
+    </div>
+  </div>
 </Layout>

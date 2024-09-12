@@ -1,8 +1,28 @@
 ---
+import { getManifests } from "../manifest_parser";
 import Layout from "../layouts/Layout.astro";
-import Benchmarks from "../components/Benchmarks.astro";
+import { parseBenchmarkData } from "../benchmark_parser";
+import BenchmarkChart from "../components/BenchmarkChart.astro";
+const fullData = await parseBenchmarkData();
+const dataset = fullData.images.sort((a, b) => b.times_faster - a.times_faster);
 ---
 
 <Layout title="Welcome to Astro.">
-  <Benchmarks />
+  <h1 class="text-3xl font-bold mb-4">Image Benchmarks</h1>
+  <div class="columns-2 mb-2">
+    {
+      dataset.map((image) => (
+        <div>
+          <a href={"#" + image.name_slug}>
+            <code class="p-1 font-mono overflow-x-auto">{image.name}</code>{" "}
+            <span class="float-right">{image.times_faster}x faster</span>
+          </a>
+        </div>
+      ))
+    }
+  </div>
+
+  {
+    dataset.map((image) => <BenchmarkChart image={image} />)
+  }
 </Layout>

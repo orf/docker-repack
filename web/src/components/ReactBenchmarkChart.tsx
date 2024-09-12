@@ -9,23 +9,26 @@ import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
+
 import { useState } from "react";
+import { formatDuration, humanFileSize } from "../utils.ts";
 
 export interface BenchmarkChartProps {
   image: BenchmarkImage;
+  prop: "time" | "total_size";
 }
 
 export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
-  const { image } = props;
+  const { image, prop } = props;
 
   const [showAll, setShowAll] = useState(false);
 
   const allImageTypes = new Set(image.times.map((time) => time.type));
   const data = [];
-  const times = Object.fromEntries(
-    image.times.map((time: BenchmarkImageTime) => [time.type, time.time]),
+  const values = Object.fromEntries(
+    image.times.map((time: BenchmarkImageTime) => [time.type, time[prop]]),
   );
-  data.push({ image: image.name, ...times });
+  data.push({ image: image.name, ...values });
 
   if (!showAll) {
     allImageTypes.clear();
@@ -33,21 +36,38 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
     allImageTypes.add(image.fastest_type);
   }
 
+  const formatter = prop === "time" ? formatDuration : humanFileSize;
+
   const series = [...allImageTypes].map((key) => ({
     dataKey: key,
     label: key,
+    valueFormatter: (value: number | null) => {
+      if (value === null) {
+        return "N/A";
+      }
+      return formatter(value);
+    },
   }));
 
   return (
-    <>
-      <button onClick={() => setShowAll(!showAll)}>{
-        showAll ? "Show only fastest timing" : `Show all ${image.times.length} timings`
-      }</button>
-      <BarChart
-        dataset={data}
-        xAxis={[{ scaleType: "band", dataKey: "image" }]}
-        series={series}
-      />
-    </>
+    <div className={"h-full"}>
+      <div className={"h-1/6"}>
+        <button onClick={() => setShowAll(!showAll)}>
+          {showAll
+            ? "Show only fastest result"
+            : `Show all ${image.times.length} results`}
+        </button>
+      </div>
+      <div className={"h-5/6"}>
+        <BarChart
+          dataset={data}
+          yAxis={[
+            { valueFormatter: (value: number) => formatter(value, true) },
+          ]}
+          xAxis={[{ scaleType: "band", dataKey: "image" }]}
+          series={series}
+        />
+      </div>
+    </div>
   );
 }

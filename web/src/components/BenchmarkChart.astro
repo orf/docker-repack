@@ -1,6 +1,8 @@
 ---
 import ReactBenchmarkChart from "./ReactBenchmarkChart";
 import { type BenchmarkImage } from "../benchmark_parser";
+import { formatDuration } from "../utils.ts";
+import LayerChart from "./ReactLayerChart";
 
 interface Props {
   image: BenchmarkImage;
@@ -8,8 +10,16 @@ interface Props {
 
 const { image } = Astro.props;
 
-const fastest = Math.min(...image.times.map((time) => time.time));
-const original = image.times.find((time) => time.type === "original")!.time;
+const fastest_image = image.times.reduce((acc, time) => {
+  if (time.time < acc.time) {
+    return time;
+  }
+  return acc;
+}, image.times[0]);
+const original = image.times.find((time) => time.type === "original")!;
+if (fastest_image.layers == undefined) {
+  throw new Error(`No fastest image found for ${JSON.stringify(image)}`);
+}
 ---
 
 <h1 class="text-2xl font-bold mb-2">
@@ -20,9 +30,21 @@ const original = image.times.find((time) => time.type === "original")!.time;
   </a>
 </h1>
 
-<p>Original: {original.toFixed(2)} seconds</p>
-<p>Fastest: {fastest.toFixed(2)} seconds</p>
-
-<div class="w-1/2 h-96">
-  <ReactBenchmarkChart image={image} client:only="react" />
+<p>Original: {formatDuration(original.time)}</p>
+<p>Fastest: {formatDuration(fastest_image.time)}</p>
+<div class="columns-2 mb-2">
+  <div class="h-96">
+    <ReactBenchmarkChart image={image} prop="time" client:only="react" />
+  </div>
+  <div class="h-96">
+    <ReactBenchmarkChart image={image} prop="total_size" client:only="react" />
+  </div>
+</div>
+<div class="columns-2 mb-2">
+  <div class="h-96">
+    <LayerChart layers={original.layers} client:only="react" />
+  </div>
+  <div class="h-96">
+    <LayerChart layers={fastest_image.layers} client:only="react" />
+  </div>
 </div>
