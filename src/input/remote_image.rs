@@ -8,10 +8,11 @@ use itertools::Itertools;
 use oci_client::manifest::{OciImageManifest, OciManifest, IMAGE_MANIFEST_MEDIA_TYPE, OCI_IMAGE_MEDIA_TYPE};
 use oci_client::secrets::RegistryAuth;
 use oci_client::{Client, Reference};
-use oci_spec::image::{ImageConfiguration, MediaType};
+use oci_spec::image::{Digest, ImageConfiguration, MediaType};
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::io::Read;
+use std::str::FromStr;
 use tokio::io::BufReader;
 use tokio::runtime::Handle;
 use tokio_util::io::SyncIoBridge;
@@ -62,8 +63,8 @@ fn build_auth(reference: &Reference) -> RegistryAuth {
 pub struct RemoteImage {
     client: Client,
     reference: Reference,
-    layers: Vec<(MediaType, String)>,
-    config_digest: String,
+    layers: Vec<(MediaType, Digest)>,
+    config_digest: Digest,
     image_config: ImageConfiguration,
     handle: Handle,
 }
@@ -78,7 +79,9 @@ impl Eq for RemoteImage {}
 
 impl Hash for RemoteImage {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.image_digest().hash(state);
+        let digest = self.image_digest();
+        digest.digest().hash(state);
+        digest.algorithm().as_ref().hash(state);
     }
 }
 
@@ -180,12 +183,7 @@ impl RemoteImage {
         client: Client,
     ) -> anyhow::Result<Self> {
         let mut config_data = vec![];
-        let config_digest = manifest
-            .config
-            .digest
-            .strip_prefix("sha256:")
-            .unwrap_or(&manifest.config.digest)
-            .to_string();
+        let config_digest = Digest::from_str(&manifest.config.digest)?;
         debug!("Fetching config for {}", config_digest);
         client
             .pull_blob(&reference, &manifest.config, &mut config_data)
@@ -196,22 +194,24 @@ impl RemoteImage {
         let layers = manifest
             .layers
             .into_iter()
-            .filter_map(|v| {
+            .map(|v| {
                 let media_type = v.media_type.as_str();
                 if let Some(parsed_media_type) = get_layer_media_type(media_type) {
                     trace!("Found layer descriptor: {:?}", v);
-                    Some((parsed_media_type, v.digest))
+                    let digest = Digest::from_str(&v.digest)?;
+                    Ok(Some((parsed_media_type, digest)))
                 } else {
                     trace!("Skipping descriptor: {:?}", v);
-                    None
+                    Ok(None)
                 }
             })
-            .collect_vec();
+            .filter_map_ok(|r| r)
+            .collect::<anyhow::Result<Vec<_>>>();
         let handle = Handle::current();
         Ok(Self {
             client,
             reference,
-            layers,
+            layers: layers?,
             image_config,
             handle,
             config_digest,
@@ -220,7 +220,7 @@ impl RemoteImage {
 }
 
 impl InputImage for RemoteImage {
-    fn image_digest(&self) -> String {
+    fn image_digest(&self) -> Digest {
         self.config_digest.clone()
     }
 
@@ -229,9 +229,10 @@ impl InputImage for RemoteImage {
     ) -> anyhow::Result<impl ExactSizeIterator<Item = anyhow::Result<InputLayer<impl Read>>>> {
         Ok(self.layers_with_compression()?.map(|(compression, digest)| {
             debug!("Fetching blob stream for {}", digest);
-            let res = self
-                .handle
-                .block_on(self.client.pull_blob_stream(&self.reference, digest.as_str()))?;
+            let res = self.handle.block_on(
+                self.client
+                    .pull_blob_stream(&self.reference, digest.to_string().as_str()),
+            )?;
 
             let reader = tokio_util::io::StreamReader::new(res);
             let reader = BufReader::with_capacity(5 * 1024 * 1024, reader);
@@ -245,7 +246,7 @@ impl InputImage for RemoteImage {
         &self.image_config
     }
 
-    fn layers(&self) -> anyhow::Result<Vec<(MediaType, String)>> {
+    fn layers(&self) -> anyhow::Result<Vec<(MediaType, Digest)>> {
         Ok(self.layers.clone())
     }
 }

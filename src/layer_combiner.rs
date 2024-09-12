@@ -92,14 +92,20 @@ mod tests {
     use super::*;
     use crate::compression::Compression;
     use crate::test_utils::{add_dir, add_file, build_layer, read_tar_entries_content, setup_tar};
+    use oci_spec::image::Digest;
     use std::path::Path;
+    use std::str::FromStr;
 
     fn make_input_layer(builder: Builder<Vec<u8>>) -> InputLayer<impl Read> {
         let finished = builder.into_inner().unwrap();
         assert_ne!(finished.len(), 0);
         let reader = std::io::Cursor::new(finished);
         let compressed_reader = Compression::Raw.new_reader(reader).unwrap();
-        InputLayer::new("test".to_string(), compressed_reader).unwrap()
+        InputLayer::new(
+            Digest::from_str("sha256:0d90d93a5cab3fd2879040420c7b7e4958aee8997fef78e9a5dd80cb01f3bd9c").unwrap(),
+            compressed_reader,
+        )
+        .unwrap()
     }
 
     #[test]

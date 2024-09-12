@@ -3,7 +3,7 @@ use crate::input::InputImage;
 use crate::platform_matcher::PlatformMatcher;
 use crate::progress;
 use anyhow::{bail, Context};
-use oci_spec::image::{Descriptor, ImageConfiguration, ImageIndex, ImageManifest, MediaType};
+use oci_spec::image::{Descriptor, Digest, ImageConfiguration, ImageIndex, ImageManifest, MediaType};
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::hash::{Hash, Hasher};
@@ -27,13 +27,15 @@ impl Eq for LocalOciImage {}
 
 impl Hash for LocalOciImage {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.image_digest().hash(state);
+        let digest = self.image_digest();
+        digest.digest().hash(state);
+        digest.algorithm().as_ref().hash(state);
     }
 }
 
 impl Debug for LocalOciImage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.manifest.config().digest())
+        f.write_str(self.manifest.config().digest().digest())
     }
 }
 
@@ -44,11 +46,8 @@ impl Display for LocalOciImage {
 }
 
 fn get_blob_path(blob_directory: &Path, descriptor: &Descriptor) -> PathBuf {
-    let digest = descriptor
-        .digest()
-        .strip_prefix("sha256:")
-        .unwrap_or(descriptor.digest());
-    blob_directory.join(digest)
+    let digest = descriptor.digest();
+    blob_directory.join(digest.digest())
 }
 
 fn read_blob_image_manifest(blob_directory: &Path, descriptor: &Descriptor) -> anyhow::Result<ImageManifest> {
@@ -138,8 +137,8 @@ impl LocalOciImage {
 
     fn from_image_manifest(manifest: ImageManifest, blob_directory: PathBuf) -> anyhow::Result<Self> {
         let config_descriptor = manifest.config();
-        let config_digest = config_descriptor.digest().strip_prefix("sha256:").unwrap();
-        let config_path = blob_directory.join(config_digest);
+        let config_digest = config_descriptor.digest();
+        let config_path = blob_directory.join(config_digest.digest());
         let image_config = ImageConfiguration::from_file(&config_path)
             .with_context(|| format!("Error reading image configuration from {config_path:?}"))?;
         Ok(Self {
@@ -151,16 +150,16 @@ impl LocalOciImage {
 }
 
 impl InputImage for LocalOciImage {
-    fn image_digest(&self) -> String {
+    fn image_digest(&self) -> Digest {
         let digest = self.manifest.config().digest();
-        digest.strip_prefix("sha256:").unwrap_or(digest).to_string()
+        digest.clone()
     }
 
     fn layers_from_manifest(
         &self,
     ) -> anyhow::Result<impl ExactSizeIterator<Item = anyhow::Result<InputLayer<impl Read>>>> {
         Ok(self.layers_with_compression()?.map(|(compression, digest)| {
-            let path = self.blob_directory.join(&digest);
+            let path = self.blob_directory.join(digest.digest());
             let file = File::open(&path).with_context(|| format!("Error reading input layer from {path:?}"))?;
             let reader = compression.new_reader(file)?;
             InputLayer::new(digest, reader)
@@ -171,14 +170,14 @@ impl InputImage for LocalOciImage {
         &self.image_config
     }
 
-    fn layers(&self) -> anyhow::Result<Vec<(MediaType, String)>> {
+    fn layers(&self) -> anyhow::Result<Vec<(MediaType, Digest)>> {
         Ok(self
             .manifest
             .layers()
             .iter()
             .map(|d| {
-                let stripped_digest = d.digest().strip_prefix("sha256:").unwrap_or(d.digest()).to_string();
-                (d.media_type().clone(), stripped_digest)
+                let stripped_digest = d.digest();
+                (d.media_type().clone(), stripped_digest.clone())
             })
             .collect())
     }

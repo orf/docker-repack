@@ -6,7 +6,7 @@ use crate::output_image::stats::WrittenImageStats;
 use anyhow::Context;
 use itertools::Itertools;
 use oci_spec::image::{
-    Descriptor, HistoryBuilder, ImageConfiguration, ImageIndexBuilder, ImageManifestBuilder, MediaType,
+    Descriptor, HistoryBuilder, ImageConfiguration, ImageIndexBuilder, ImageManifestBuilder, MediaType, Sha256Digest,
 };
 use serde::Serialize;
 use sha2::Digest;
@@ -14,13 +14,14 @@ use std::fmt::{Debug, Display};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use tracing::debug;
 
 pub struct WrittenLayer<'a> {
     pub layer: &'a OutputLayer<'a>,
     pub compressed_file_size: u64,
     pub raw_content_hash: String,
-    pub compressed_content_hash: String,
+    pub compressed_content_hash: Sha256Digest,
 }
 
 pub struct OutputImageWriter {
@@ -53,20 +54,20 @@ impl OutputImageWriter {
         config: ImageConfiguration,
         mut written_layers: Vec<WrittenLayer>,
         platform: Platform,
-    ) -> anyhow::Result<(u64, String, WrittenImageStats)> {
+    ) -> anyhow::Result<(u64, Sha256Digest, WrittenImageStats)> {
         written_layers.sort_by_key(|l| (l.layer.type_, l.compressed_file_size));
         let (config_size, config_hash) = self.write_config(&config, &written_layers).context("Write config")?;
         self.build_manifest(config_size, config_hash, &written_layers, platform)
             .context("Build manifest")
     }
 
-    pub fn write_image_index(self, manifests: &[(u64, String, WrittenImageStats)]) -> anyhow::Result<()> {
+    pub fn write_image_index(self, manifests: &[(u64, Sha256Digest, WrittenImageStats)]) -> anyhow::Result<()> {
         let description = manifests.iter().map(|(_, _, stats)| stats.description()).join(" / ");
 
         // All of our manifests should be added to a single index, which is stored as a blob.
         let index = manifests
             .iter()
-            .map(|(size, hash, _)| Descriptor::new(MediaType::ImageManifest, *size as i64, format!("sha256:{hash}")))
+            .map(|(size, hash, _)| Descriptor::new(MediaType::ImageManifest, *size, hash.clone()))
             .collect_vec();
         let image_index = ImageIndexBuilder::default()
             .schema_version(2u32)
@@ -82,11 +83,7 @@ impl OutputImageWriter {
             .schema_version(2u32)
             .media_type(MediaType::ImageIndex)
             .annotations([("org.opencontainers.image.description".to_string(), description.clone())])
-            .manifests(&[Descriptor::new(
-                MediaType::ImageIndex,
-                index_size as i64,
-                format!("sha256:{index_hash}"),
-            )])
+            .manifests(&[Descriptor::new(MediaType::ImageIndex, index_size, index_hash)])
             .build()
             .context("ImageIndexBuilder Build")?;
 
@@ -99,22 +96,18 @@ impl OutputImageWriter {
     fn build_manifest(
         &self,
         config_size: u64,
-        config_hash: String,
+        config_hash: Sha256Digest,
         written_layers: &[WrittenLayer],
         platform: Platform,
-    ) -> anyhow::Result<(u64, String, WrittenImageStats)> {
-        let config_descriptor = Descriptor::new(
-            MediaType::ImageConfig,
-            config_size as i64,
-            format!("sha256:{config_hash}"),
-        );
+    ) -> anyhow::Result<(u64, Sha256Digest, WrittenImageStats)> {
+        let config_descriptor = Descriptor::new(MediaType::ImageConfig, config_size, config_hash);
         let layer_descriptors = written_layers
             .iter()
             .map(|l| {
                 Descriptor::new(
                     MediaType::ImageLayerZstd,
-                    l.compressed_file_size as i64,
-                    format!("sha256:{}", l.compressed_content_hash),
+                    l.compressed_file_size,
+                    l.compressed_content_hash.clone(),
                 )
             })
             .collect_vec();
@@ -133,7 +126,11 @@ impl OutputImageWriter {
         Ok((manifest_size, manifest_hash, stats))
     }
 
-    fn write_config(&self, config: &ImageConfiguration, layers: &[WrittenLayer]) -> anyhow::Result<(u64, String)> {
+    fn write_config(
+        &self,
+        config: &ImageConfiguration,
+        layers: &[WrittenLayer],
+    ) -> anyhow::Result<(u64, Sha256Digest)> {
         let created_at = chrono::Utc::now().to_rfc3339();
         let diff_ids = layers
             .iter()
@@ -164,7 +161,7 @@ impl OutputImageWriter {
         &'a self,
         layer: &'a OutputLayer,
         compression_level: i32,
-        image_digest: String,
+        image_digest: oci_spec::image::Digest,
     ) -> anyhow::Result<WrittenLayer> {
         let mut hasher = sha2::Sha256::new();
         layer
@@ -207,31 +204,34 @@ impl OutputImageWriter {
         })
     }
 
-    fn add_json_to_blobs(&self, item: impl Serialize) -> anyhow::Result<(u64, String)> {
+    fn add_json_to_blobs(&self, item: impl Serialize) -> anyhow::Result<(u64, Sha256Digest)> {
         let value = serde_json::to_string_pretty(&item)?;
         let (size, hash) = hash_reader(value.as_bytes())?;
-        let path = self.blobs_dir.join(&hash);
+        let path = self.blobs_dir.join(hash.digest());
         std::fs::write(&path, value)?;
         Ok((size, hash))
     }
 
-    fn add_path_to_blobs(&self, input_path: impl AsRef<Path> + Debug) -> anyhow::Result<(u64, String)> {
+    fn add_path_to_blobs(&self, input_path: impl AsRef<Path> + Debug) -> anyhow::Result<(u64, Sha256Digest)> {
         let (size, hash) = hash_file(&input_path).context("Hashing file")?;
-        let path = self.blobs_dir.join(&hash);
+        let path = self.blobs_dir.join(hash.digest());
         std::fs::rename(&input_path, &path).with_context(|| format!("Renaming {input_path:?} to {path:?}"))?;
         Ok((size, hash))
     }
 }
 
-fn hash_reader(mut content: impl Read) -> anyhow::Result<(u64, String)> {
+fn hash_reader(mut content: impl Read) -> anyhow::Result<(u64, Sha256Digest)> {
     let mut hasher = sha2::Sha256::new();
     let compressed_file_size = std::io::copy(&mut content, &mut hasher).context("Copying bytes")?;
     let digest: [u8; 32] = hasher.finalize().into();
     let compressed_content_hash: const_hex::Buffer<32> = const_hex::const_encode(&digest);
-    Ok((compressed_file_size, compressed_content_hash.as_str().to_string()))
+    Ok((
+        compressed_file_size,
+        Sha256Digest::from_str(compressed_content_hash.as_str())?,
+    ))
 }
 
-fn hash_file(path: impl AsRef<Path> + Debug) -> anyhow::Result<(u64, String)> {
+fn hash_file(path: impl AsRef<Path> + Debug) -> anyhow::Result<(u64, Sha256Digest)> {
     let layer_file = File::options()
         .read(true)
         .open(&path)

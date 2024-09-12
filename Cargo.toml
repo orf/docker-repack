@@ -21,7 +21,7 @@ itertools = "0.13.0"
 flate2 = "1.0.33"
 byte-unit = { version = "5.1.4" }
 sha2 = { version = "0.10.8" }
-oci-spec = { version = "0.6.8", default-features = false, features = ["image"] }
+oci-spec = { version = "0.7.0", default-features = false, features = ["image"] }
 serde_json = { version = "1.0.128", default-features = false }
 const-hex = { version = "1.12.0", default-features = false }
 chrono = { version = "0.4.38", default-features = false, features = ["now"] }

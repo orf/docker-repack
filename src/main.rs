@@ -8,6 +8,7 @@ use globset::Glob;
 use input::InputImage;
 use itertools::Itertools;
 use memmap2::Mmap;
+use oci_spec::image::Sha256Digest;
 use output_image::image::OutputImageWriter;
 use output_image::layers::OutputLayers;
 use rand::prelude::*;
@@ -153,7 +154,7 @@ fn handle_input_images<T: InputImage>(
     output_image: &OutputImageWriter,
     target_size: Byte,
     compression_level: i32,
-) -> anyhow::Result<Vec<(u64, String, WrittenImageStats)>> {
+) -> anyhow::Result<Vec<(u64, Sha256Digest, WrittenImageStats)>> {
     info!("Found {} images", images.len());
     for image in &images {
         info!(" - {} - digest: {}", image.platform(), image.image_digest());

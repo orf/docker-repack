@@ -1,7 +1,9 @@
 use crate::input::layers::InputLayer;
+use oci_spec::image::Digest;
 use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use tar::{Builder, EntryType, Header};
 
 #[derive(Default)]
@@ -48,7 +50,11 @@ impl LayerBuilder {
 
     pub fn build(self) -> InputLayer<impl Read> {
         let content = self.build_raw();
-        InputLayer::new("test".to_string(), Cursor::new(content)).unwrap()
+        InputLayer::new(
+            Digest::from_str("sha256:0d90d93a5cab3fd2879040420c7b7e4958aee8997fef78e9a5dd80cb01f3bd9c").unwrap(),
+            Cursor::new(content),
+        )
+        .unwrap()
     }
 
     pub fn build_raw(self) -> Vec<u8> {

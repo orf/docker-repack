@@ -5,7 +5,7 @@ use oci_client::manifest::{
     IMAGE_DOCKER_LAYER_GZIP_MEDIA_TYPE, IMAGE_DOCKER_LAYER_TAR_MEDIA_TYPE, IMAGE_LAYER_GZIP_MEDIA_TYPE,
     IMAGE_LAYER_MEDIA_TYPE, IMAGE_LAYER_NONDISTRIBUTABLE_GZIP_MEDIA_TYPE, IMAGE_LAYER_NONDISTRIBUTABLE_MEDIA_TYPE,
 };
-use oci_spec::image::{ImageConfiguration, MediaType};
+use oci_spec::image::{Digest, ImageConfiguration, MediaType};
 use std::fmt::{Display, Formatter, Write};
 use std::hash::Hash;
 use std::io::Read;
@@ -69,7 +69,7 @@ impl Display for Platform {
 }
 
 pub trait InputImage: Display + Sized + Send + Sync + Hash + Eq + PartialEq {
-    fn image_digest(&self) -> String;
+    fn image_digest(&self) -> Digest;
 
     fn platform(&self) -> Platform {
         let config = self.config().clone();
@@ -82,9 +82,9 @@ pub trait InputImage: Display + Sized + Send + Sync + Hash + Eq + PartialEq {
 
     fn config(&self) -> &ImageConfiguration;
 
-    fn layers(&self) -> anyhow::Result<Vec<(MediaType, String)>>;
+    fn layers(&self) -> anyhow::Result<Vec<(MediaType, Digest)>>;
 
-    fn layers_with_compression(&self) -> anyhow::Result<impl ExactSizeIterator<Item = (Compression, String)>> {
+    fn layers_with_compression(&self) -> anyhow::Result<impl ExactSizeIterator<Item = (Compression, Digest)>> {
         let iterator = self
             .layers()?
             .into_iter()
