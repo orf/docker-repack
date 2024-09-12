@@ -175,9 +175,11 @@ impl OutputImageWriter {
         let writer = layer.to_writer(&mut counter).context("Write Counter")?;
         let raw_file_size = writer.written_bytes();
 
-        let layer_path = self
-            .temp_dir
-            .join(format!("layer-{raw_content_hash}-for-{image_digest}.tar.zst"));
+        let layer_path = self.temp_dir.join(format!(
+            "layer-{raw_content_hash}-for-{}-{}.tar.zst",
+            image_digest.algorithm(),
+            image_digest.digest()
+        ));
         let layer_file = File::options()
             .create(true)
             .truncate(true)
