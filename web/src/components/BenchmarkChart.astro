@@ -3,6 +3,7 @@ import ReactBenchmarkChart from "./ReactBenchmarkChart";
 import { type BenchmarkImage } from "../benchmark_parser";
 import { formatDuration } from "../utils.ts";
 import LayerChart from "./ReactLayerChart";
+import { humanFileSize } from "../utils";
 
 interface Props {
   image: BenchmarkImage;
@@ -24,27 +25,42 @@ if (fastest_image.layers == undefined) {
 
 <h1 class="text-2xl font-bold mb-2">
   <a id={image.name_slug}>
-    <code class="p-1 font-mono overflow-x-auto">{image.name}</code> ({
-      image.times_faster
-    }x faster)
+    <code class="p-1 font-mono overflow-x-auto">{image.name}</code>
+    ({image.times_faster}x faster, {image.times_smaller}x smaller){" "}
   </a>
 </h1>
 
-<p>Original: {formatDuration(original.time)}</p>
-<p>Fastest: {formatDuration(fastest_image.time)}</p>
 <div class="columns-2 mb-2">
-  <div class="h-96">
-    <ReactBenchmarkChart image={image} prop="time" client:only="react" />
+  <div>
+    <p>Original: {formatDuration(original.time)}</p>
+    <p>Fastest: {formatDuration(fastest_image.time)}</p>
+    <div class="h-96">
+      <ReactBenchmarkChart image={image} prop="time" client:only="react" />
+    </div>
   </div>
-  <div class="h-96">
-    <ReactBenchmarkChart image={image} prop="total_size" client:only="react" />
+  <div>
+    <p>Original: {humanFileSize(original.total_size)}</p>
+    <p>Fastest: {humanFileSize(fastest_image.total_size)}</p>
+    <div class="h-96">
+      <ReactBenchmarkChart
+        image={image}
+        prop="total_size"
+        client:only="react"
+      />
+    </div>
   </div>
 </div>
 <div class="columns-2 mb-2">
-  <div class="h-96">
-    <LayerChart layers={original.layers} client:only="react" />
+  <div>
+    <p>Layers: {original.layers.length}</p>
+    <div class="h-96">
+      <LayerChart layers={original.layers} client:only="react" />
+    </div>
   </div>
-  <div class="h-96">
-    <LayerChart layers={fastest_image.layers} client:only="react" />
+  <div>
+    <p>Layers: {fastest_image.layers.length}</p>
+    <div class="h-96">
+      <LayerChart layers={fastest_image.layers} client:only="react" />
+    </div>
   </div>
 </div>

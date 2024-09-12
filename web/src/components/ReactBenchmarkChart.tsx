@@ -51,13 +51,6 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
 
   return (
     <div className={"h-full"}>
-      <div className={"h-1/6"}>
-        <button onClick={() => setShowAll(!showAll)}>
-          {showAll
-            ? "Show only fastest result"
-            : `Show all ${image.times.length} results`}
-        </button>
-      </div>
       <div className={"h-5/6"}>
         <BarChart
           dataset={data}
@@ -67,6 +60,13 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
           xAxis={[{ scaleType: "band", dataKey: "image" }]}
           series={series}
         />
+      </div>
+      <div className={"h-fit text-center"}>
+        <button onClick={() => setShowAll(!showAll)} className={"align-top"}>
+          {showAll
+            ? "Show only fastest result"
+            : `Show all ${image.times.length} results`}
+        </button>
       </div>
     </div>
   );

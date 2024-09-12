@@ -27,6 +27,7 @@ export interface BenchmarkImage {
   name: string;
   name_slug: string;
   times_faster: number;
+  times_smaller: number;
   fastest_type: string;
   times: BenchmarkImageTime[];
 }
@@ -45,25 +46,24 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
   }
   const benchmark_data: any = JSON.parse(results.getData().toString("utf-8")!);
 
-  const image_times: BenchmarkImageTime[] = benchmark_data.results.map(
-    (res: { parameters: { image: string; type: string }; mean: number }) => {
-      const manifestKey = `${res.parameters.image}-${res.parameters.type}`;
-      const manifest = manifests[manifestKey];
-      if (manifest === undefined) {
-          return null
-      }
-      return {
-        image: res.parameters.image,
-        type: res.parameters.type,
-        time: res.mean,
-        total_size: manifest.reduce(
-          (acc, layer) => acc + layer.size,
-          0,
-        ),
-        layers: manifest,
-      };
-    },
-  ).filter((x: BenchmarkImageTime | null) => x !== null);
+  const image_times: BenchmarkImageTime[] = benchmark_data.results
+    .map(
+      (res: { parameters: { image: string; type: string }; mean: number }) => {
+        const manifestKey = `${res.parameters.image}-${res.parameters.type}`;
+        const manifest = manifests[manifestKey];
+        if (manifest === undefined) {
+          return null;
+        }
+        return {
+          image: res.parameters.image,
+          type: res.parameters.type,
+          time: res.mean,
+          total_size: manifest.reduce((acc, layer) => acc + layer.size, 0),
+          layers: manifest,
+        };
+      },
+    )
+    .filter((x: BenchmarkImageTime | null) => x !== null);
   const mapped = groupBy(image_times, (time) => time.image);
   const parsed: BenchmarkImage[] = Object.entries(mapped)
     .map(([image, times]) => {
@@ -82,6 +82,10 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
         (original.time / fastest.time).toFixed(1),
       );
 
+      const percentage_smaller = Number(
+        (original.total_size / fastest.total_size).toFixed(1),
+      );
+
       const sorted_times = [
         original,
         ...times.filter((time) => time.type !== "original"),
@@ -96,6 +100,7 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
         name_slug: image.replaceAll(".", "-"),
         times: sorted_times,
         fastest_type: fastest.type,
+        times_smaller: percentage_smaller,
         times_faster: percentage_faster,
       };
     })
