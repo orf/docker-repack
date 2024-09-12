@@ -24,7 +24,5 @@ const dataset = fullData.images.sort((a, b) => b.times_faster - a.times_faster);
     }
   </div>
 
-  {
-    dataset.map((image) => <BenchmarkChart image={image} />)
-  }
+  {dataset.map((image) => <BenchmarkChart image={image} />)}
 </Layout>
