@@ -7,6 +7,8 @@ import react from "@astrojs/react";
 
 // https://astro.build/config
 export default defineConfig({
+  site: process.env.SITE_URL || "http://localhost",
+  base: process.env.SITE_PREFIX || '/docs',
   integrations: [tailwind(), react()],
   vite: {
     plugins: [ViteYaml()],

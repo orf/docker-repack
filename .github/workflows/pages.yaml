@@ -41,6 +41,7 @@ jobs:
       - run: npm run build
         working-directory: web/
         env:
+          SITE_HOST: ${{ steps.pages.outputs.origin }}
           SITE_PREFIX: ${{ steps.pages.outputs.base_path }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
