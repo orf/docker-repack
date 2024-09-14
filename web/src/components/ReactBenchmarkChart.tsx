@@ -21,7 +21,7 @@ export interface BenchmarkChartProps {
 export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
   const { image, prop } = props;
 
-  const [showAll, setShowAll] = useState(false);
+  // const [showAll, setShowAll] = useState(false);
 
   const allImageTypes = new Set(image.times.map((time) => time.type));
   const data = [];
@@ -30,11 +30,11 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
   );
   data.push({ image: image.name, ...values });
 
-  if (!showAll) {
-    allImageTypes.clear();
-    allImageTypes.add("original");
-    allImageTypes.add(image.fastest_type);
-  }
+  // if (!showAll) {
+  //   allImageTypes.clear();
+  //   allImageTypes.add("original");
+  //   allImageTypes.add(image.fastest_type);
+  // }
 
   const formatter = prop === "time" ? formatDuration : humanFileSize;
 
@@ -51,7 +51,7 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
 
   return (
     <div className={"h-full"}>
-      <div className={"h-5/6"}>
+      {/*<div className={"h-5/6"}>*/}
         <BarChart
           margin={{ left: 75 }}
           dataset={data}
@@ -61,14 +61,14 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
           xAxis={[{ scaleType: "band", dataKey: "image" }]}
           series={series}
         />
-      </div>
-      <div className={"h-fit text-center"}>
-        <button onClick={() => setShowAll(!showAll)} className={"align-top"}>
-          {showAll
-            ? "Show only fastest result"
-            : `Show all ${image.times.length} results`}
-        </button>
-      </div>
+      {/*</div>*/}
+      {/*<div className={"h-fit text-center"}>*/}
+      {/*  <button onClick={() => setShowAll(!showAll)} className={"align-top"}>*/}
+      {/*    {showAll*/}
+      {/*      ? "Show only fastest result"*/}
+      {/*      : `Show all ${image.times.length} results`}*/}
+      {/*  </button>*/}
+      {/*</div>*/}
     </div>
   );
 }
