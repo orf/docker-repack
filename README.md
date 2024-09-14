@@ -1,4 +1,4 @@
-# docker-repack - Optimize Docker images for pulling speed.
+# docker-repack - Speed up Docker image pulls
 
 This tool repacks Docker images into smaller, more efficient images. This significantly reduces the time it takes to
 pull an image. Some examples:
