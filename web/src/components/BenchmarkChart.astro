@@ -46,14 +46,14 @@ if (fastest_image.layers == undefined) {
 
 <div class="columns-1 md:columns-2 mb-2">
   <div>
+    <h1 class="text-2xl text-center">Pull time</h1>
     <div class="h-96">
-      <h1 class="text-2xl text-center">Pull time</h1>
       <ReactBenchmarkChart image={image} prop="time" client:only="react" />
     </div>
   </div>
   <div>
+    <h1 class="text-2xl text-center">Image Size</h1>
     <div class="h-96">
-      <h1 class="text-2xl text-center">Image Size</h1>
       <ReactBenchmarkChart
         image={image}
         prop="total_size"
@@ -64,14 +64,14 @@ if (fastest_image.layers == undefined) {
 </div>
 <div class="columns-2 mb-2 hidden md:block">
   <div>
+    <h1 class="text-2xl text-center">Original Layers</h1>
     <div class="h-96">
-      <h1 class="text-2xl text-center">Original Layers</h1>
       <LayerChart layers={original.layers} client:only="react" />
     </div>
   </div>
   <div>
+    <h1 class="text-2xl text-center">Repacked Layers</h1>
     <div class="h-96">
-      <h1 class="text-2xl text-center">Repacked Layers</h1>
       <LayerChart layers={fastest_image.layers} client:only="react" />
     </div>
   </div>
