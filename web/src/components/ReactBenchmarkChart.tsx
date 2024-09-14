@@ -31,9 +31,9 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
   data.push({ image: image.name, ...values });
 
   // if (!showAll) {
-  //   allImageTypes.clear();
-  //   allImageTypes.add("original");
-  //   allImageTypes.add(image.fastest_type);
+    allImageTypes.clear();
+    allImageTypes.add("original");
+    allImageTypes.add(image.fastest_type);
   // }
 
   const formatter = prop === "time" ? formatDuration : humanFileSize;
