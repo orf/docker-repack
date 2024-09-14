@@ -1,7 +1,8 @@
 # docker-repack - Speed up Docker image pulls
 
-This tool repacks Docker images into smaller, more efficient images. This significantly reduces the time it takes to
-pull an image. Some examples:
+This tool repacks a Docker image into a smaller, more efficient version that makes it significantly faster to pull. It 
+does this by using a few [different techniques](docs/about.md) such as removing redundant data and improving compression 
+ratios. Some examples of improvements:
 
 | Image                                                                           | Before                       | After             | Reduction                 |
 |---------------------------------------------------------------------------------|------------------------------|-------------------|---------------------------|
@@ -13,8 +14,6 @@ pull an image. Some examples:
 
 See the [benchmarks page](https://orf.github.io/docker-repack/benchmarks/) for a full comparison of pulling times across
 many different images.
-
-For more information on the techniques the tool uses, see the [about page](docs/about.md).
 
 ![](./docs/preview.gif)
 
