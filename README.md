@@ -14,7 +14,7 @@ pull an image. Some examples:
 See the [benchmarks page](https://orf.github.io/docker-repack/benchmarks/) for a full comparison of pulling times across
 many different images.
 
-For more information on how the tool works, see the [about page](docs/about.md).
+For more information on the techniques the tool uses, see the [about page](docs/about.md).
 
 ![](./docs/preview.gif)
 
@@ -23,6 +23,25 @@ For more information on how the tool works, see the [about page](docs/about.md).
 ```bash
 $ docker-repack docker://alpine:latest oci://directory/ --target-size=50MB
 ```
+
+Full arguments:
+
+```bash
+Usage: docker-repack [OPTIONS] --target-size <TARGET_SIZE> <SOURCE> <OUTPUT_DIR>
+
+Arguments:
+  <SOURCE>      Source image. e.g. `python:3.11`, `tensorflow/tensorflow:latest` or `oci://local/image/path`
+  <OUTPUT_DIR>  Location to save image, e.g oci://directory/path/
+
+Options:
+  -t, --target-size <TARGET_SIZE>              Target size for layers
+      --concurrency <CONCURRENCY>
+      --keep-temp-files
+      --compression-level <COMPRESSION_LEVEL>  [default: 14]
+      --platform <PLATFORM>                    [default: linux/*]
+  -h, --help                                   Print help
+  -V, --version                                Print version
+  ```
 
 ## Installation
 
