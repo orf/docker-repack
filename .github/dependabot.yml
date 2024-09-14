@@ -18,3 +18,11 @@ updates:
       dependencies:
         patterns:
           - "*"
+  - package-ecosystem: "npm"
+    directory: "web/"
+    schedule:
+      interval: "daily"
+    groups:
+      dependencies:
+        patterns:
+          - "*"
