@@ -26,22 +26,34 @@ if (fastest_image.layers == undefined) {
 <h1 class="text-2xl font-bold mb-2">
   <a id={image.name_slug}>
     <code class="p-1 font-mono overflow-x-auto">{image.name}</code>
-    ({image.times_faster}x faster, {image.times_smaller}x smaller){" "}
   </a>
 </h1>
+<p>
+  <strong>Original</strong>: {original.layers.length} layers, {
+    humanFileSize(original.total_size)
+  }, {formatDuration(original.time)}
+</p>
+<p>
+  <strong>Repacked</strong>: {fastest_image.layers.length} layers, {
+    humanFileSize(fastest_image.total_size)
+  }, {formatDuration(fastest_image.time)}
+</p>
+<p>
+  <strong>Reduction</strong>: {image.times_faster}x faster, {
+    image.times_smaller
+  }x smaller
+</p>
 
-<div class="columns-2 mb-2">
+<div class="columns-1 md:columns-2 mb-2">
   <div>
-    <p>Original: {formatDuration(original.time)}</p>
-    <p>Fastest: {formatDuration(fastest_image.time)}</p>
     <div class="h-96">
+      <h1 class="text-2xl text-center">Pull time</h1>
       <ReactBenchmarkChart image={image} prop="time" client:only="react" />
     </div>
   </div>
   <div>
-    <p>Original: {humanFileSize(original.total_size)}</p>
-    <p>Fastest: {humanFileSize(fastest_image.total_size)}</p>
     <div class="h-96">
+      <h1 class="text-2xl text-center">Image Size</h1>
       <ReactBenchmarkChart
         image={image}
         prop="total_size"
@@ -50,16 +62,16 @@ if (fastest_image.layers == undefined) {
     </div>
   </div>
 </div>
-<div class="columns-2 mb-2">
+<div class="columns-2 mb-2 hidden md:block">
   <div>
-    <p>Layers: {original.layers.length}</p>
     <div class="h-96">
+      <h1 class="text-2xl text-center">Original Layers</h1>
       <LayerChart layers={original.layers} client:only="react" />
     </div>
   </div>
   <div>
-    <p>Layers: {fastest_image.layers.length}</p>
     <div class="h-96">
+      <h1 class="text-2xl text-center">Repacked Layers</h1>
       <LayerChart layers={fastest_image.layers} client:only="react" />
     </div>
   </div>

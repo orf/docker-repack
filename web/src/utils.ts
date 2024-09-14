@@ -1,28 +1,31 @@
+// @ts-ignore
+import humanizeDuration from "humanize-duration";
+
+const shortEnglishHumanizer = humanizeDuration.humanizer({
+  language: "shortEn",
+  languages: {
+    shortEn: {
+      y: () => "y",
+      mo: () => "mo",
+      w: () => "w",
+      d: () => "d",
+      h: () => "h",
+      m: () => "m",
+      s: () => "s",
+      ms: () => "ms",
+    },
+  },
+});
+
 export function formatDuration(
   seconds: number,
   short: boolean = false,
 ): string {
-  const ms = seconds * 1000;
-  if (ms < 1000) {
-    return `${ms.toFixed(0)} ms`;
-  }
-  const time = {
-    day: Math.floor(ms / 86400000),
-    hour: Math.floor(ms / 3600000) % 24,
-    minute: Math.floor(ms / 60000) % 60,
-    second: Math.floor(ms / 1000) % 60,
-    m: Math.floor(ms) % 1000,
-  };
+  const args = { units: ["m", "s"], round: true };
   if (short) {
-    return Object.entries(time)
-      .filter((val) => val[1] !== 0)
-      .map(([key, val]) => `${val}${key[0]}`)
-      .join(" ");
+    return shortEnglishHumanizer(seconds * 1000, args);
   }
-  return Object.entries(time)
-    .filter((val) => val[1] !== 0)
-    .map(([key, val]) => `${val} ${key}${val !== 1 ? "s" : ""}`)
-    .join(", ");
+  return humanizeDuration(seconds * 1000, args);
 }
 
 export function humanFileSize(size: number): string {

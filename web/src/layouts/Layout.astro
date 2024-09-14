@@ -1,10 +1,20 @@
 ---
 import Header from "../components/Header.astro";
+import { getImage } from "astro:assets";
+import logo from "../media/logo.png";
+
 interface Props {
   title: string;
 }
 
 const { title } = Astro.props;
+
+const logoImage = await getImage({
+  src: logo,
+  format: "webp",
+  width: 50,
+  quality: "max",
+});
 ---
 
 <!doctype html>
@@ -12,13 +22,13 @@ const { title } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/png" href={logoImage.src} />
     <title>{title}</title>
   </head>
   <body>
     <Header />
-    <main class="container mx-auto">
+    <main class="container mx-auto p-1">
       <slot />
     </main>
   </body>

@@ -25,6 +25,8 @@ export interface BenchmarkImageTime {
 
 export interface BenchmarkImage {
   name: string;
+  repo: string;
+  imageName: string;
   name_slug: string;
   times_faster: number;
   times_smaller: number;
@@ -95,8 +97,12 @@ export async function parseBenchmarkData(): Promise<BenchmarkData> {
         return null;
       }
 
+      const name = destinationToUpstream[image];
+      const [repo, imageName] = name.split(":");
       return {
-        name: destinationToUpstream[image],
+        name,
+        repo,
+        imageName,
         name_slug: image.replaceAll(".", "-"),
         times: sorted_times,
         fastest_type: fastest.type,

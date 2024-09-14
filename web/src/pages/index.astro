@@ -36,9 +36,9 @@ const maxDownloads = 5;
   <h1 class="text-3xl">Docker Repack</h1>
   <p>Docker repack rewrites Docker images to optimize for faster pulls.</p>
 
-  <div class="columns-2 mb-2">
+  <div class="columns-1 md:columns-2 mb-2">
     <div>
-      <p class="m-1">This:</p>
+      <p class="m-1"><strong>It turns this:</strong></p>
       <Terminal command="docker pull original">
         <PullComponent
           bandwidth={bandwidth}
@@ -50,7 +50,7 @@ const maxDownloads = 5;
     </div>
 
     <div>
-      <p class="m-1">Turns into this:</p>
+      <p class="m-1"><strong>Into this:</strong></p>
       <Terminal command="docker pull repacked">
         <PullComponent
           bandwidth={bandwidth}

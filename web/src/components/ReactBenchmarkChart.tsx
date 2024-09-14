@@ -45,7 +45,7 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
       if (value === null) {
         return "N/A";
       }
-      return formatter(value);
+      return formatter(value, true);
     },
   }));
 
@@ -53,6 +53,7 @@ export default function ReactBenchmarkChart(props: BenchmarkChartProps) {
     <div className={"h-full"}>
       <div className={"h-5/6"}>
         <BarChart
+          margin={{ left: 75 }}
           dataset={data}
           yAxis={[
             { valueFormatter: (value: number) => formatter(value, true) },

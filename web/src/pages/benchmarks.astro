@@ -9,14 +9,16 @@ const dataset = fullData.images.sort((a, b) => b.times_faster - a.times_faster);
 
 <Layout title="Docker Repack: Benchmarks">
   <h1 class="text-3xl font-bold mb-4">Image Benchmarks</h1>
-  <div class="columns-2 mb-2">
+  <div class="columns-1 md:columns-2 mb-2">
     {
       dataset.map((image) => (
         <div>
           <a href={"#" + image.name_slug}>
-            <code class="p-1 font-mono overflow-x-auto">{image.name}</code>{" "}
+            <span class="inline md:hidden">{image.repo}</span>
+            <span class="hidden md:inline">{image.name}</span>
             <span class="float-right">
-              {image.times_faster}x faster, {image.times_smaller}x smaller{" "}
+              <strong>{image.times_faster}x</strong> faster,{" "}
+              <strong>{image.times_smaller}x</strong> smaller{" "}
             </span>
           </a>
         </div>
