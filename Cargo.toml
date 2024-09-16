@@ -14,7 +14,7 @@ tracing-indicatif = "0.3.6"
 memmap2 = "0.9.4"
 strum = { version = "0.26.3", features = ["derive"] }
 memchr = { version = "2.7.4", default-features = false }
-anyhow = "1.0.86"
+anyhow = "1.0.89"
 zstd = { version = "0.13.2" }
 tar = { version = "0.4.41", default-features = false }
 itertools = "0.13.0"
