@@ -45,7 +45,7 @@ jobs:
           rustflags: '-C target-cpu=native'
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.5
+        uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Build
         run: cargo build --profile=${{ env.build-profile }} -F perf
