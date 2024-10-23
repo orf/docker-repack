@@ -14,26 +14,26 @@ tracing-indicatif = "0.3.6"
 memmap2 = "0.9.4"
 strum = { version = "0.26.3", features = ["derive"] }
 memchr = { version = "2.7.4", default-features = false }
-anyhow = "1.0.86"
+anyhow = "1.0.91"
 zstd = { version = "0.13.2" }
-tar = { version = "0.4.41", default-features = false }
+tar = { version = "0.4.42", default-features = false }
 itertools = "0.13.0"
-flate2 = "1.0.33"
+flate2 = "1.0.34"
 byte-unit = { version = "5.1.4" }
 sha2 = { version = "0.10.8" }
 oci-spec = { version = "0.7.0", default-features = false, features = ["image"] }
-serde_json = { version = "1.0.128", default-features = false }
-const-hex = { version = "1.12.0", default-features = false }
+serde_json = { version = "1.0.132", default-features = false }
+const-hex = { version = "1.13.1", default-features = false }
 chrono = { version = "0.4.38", default-features = false, features = ["now"] }
-serde = "1.0.209"
+serde = "1.0.213"
 rayon = "1.10.0"
 indicatif = "0.17.8"
-oci-client = "0.12.1"
-tokio = { version = "1.40.0", features = ["full"] }
+oci-client = "0.13.0"
+tokio = { version = "1.41.0", features = ["full"] }
 docker_credential = "1.3.1"
 tokio-util = { version = "0.7.12", features = ["full"] }
-clap = { version = "4.5.16", features = ["derive"] }
-shadow-rs = "0.35.0"
+clap = { version = "4.5.20", features = ["derive"] }
+shadow-rs = "0.35.1"
 rand = {version = "0.8.5", default-features = false, features = ["small_rng", "getrandom", "min_const_gen"]}
 globset = { version = "0.4.15", default-features = false }
 
@@ -60,4 +60,4 @@ debug = true
 test-log = { version = "0.2.16", features = ["color", "trace"] }
 
 [build-dependencies]
-shadow-rs = "0.35.0"
+shadow-rs = "0.35.1"
