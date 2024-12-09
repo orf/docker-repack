@@ -15,17 +15,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: matrix all
-        uses: mikefarah/yq@v4.44.3
+        uses: mikefarah/yq@v4.44.6
         id: matrix
         with:
           cmd: yq -o=json '.upstream_images' 'benchmark/sources.yaml'
       - name: matrix destinations
-        uses: mikefarah/yq@v4.44.3
+        uses: mikefarah/yq@v4.44.6
         id: destinations
         with:
           cmd: yq -o=json '[.upstream_images[].destination]' 'benchmark/sources.yaml'
       - name: matrix sizes
-        uses: mikefarah/yq@v4.44.3
+        uses: mikefarah/yq@v4.44.6
         id: sizes
         with:
           cmd: yq -o=json '.sizes' 'benchmark/sources.yaml'
@@ -45,7 +45,7 @@ jobs:
           rustflags: '-C target-cpu=native'
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.5
+        uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Build
         run: cargo build --profile=${{ env.build-profile }} -F perf
