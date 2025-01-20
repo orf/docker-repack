@@ -162,7 +162,7 @@ impl OutputImageWriter {
         layer: &'a OutputLayer,
         compression_level: i32,
         image_digest: oci_spec::image::Digest,
-    ) -> anyhow::Result<WrittenLayer> {
+    ) -> anyhow::Result<WrittenLayer<'a>> {
         let mut hasher = sha2::Sha256::new();
         layer
             .to_writer_with_progress("Hashing raw layer", &mut hasher)

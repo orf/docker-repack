@@ -35,7 +35,7 @@ impl ImageItems<Mmap> {
     }
 }
 
-impl<'a, T: AsRef<[u8]> + 'a> ImageItems<T> {
+impl<T: AsRef<[u8]>> ImageItems<T> {
     #[cfg(test)]
     pub fn from_data(data: T, total_items: usize) -> ImageItems<T> {
         assert_ne!(data.as_ref().len(), 0);
