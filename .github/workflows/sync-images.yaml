@@ -15,17 +15,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: matrix all
-        uses: mikefarah/yq@v4.44.6
+        uses: mikefarah/yq@v4.45.1
         id: matrix
         with:
           cmd: yq -o=json '.upstream_images' 'benchmark/sources.yaml'
       - name: matrix destinations
-        uses: mikefarah/yq@v4.44.6
+        uses: mikefarah/yq@v4.45.1
         id: destinations
         with:
           cmd: yq -o=json '[.upstream_images[].destination]' 'benchmark/sources.yaml'
       - name: matrix sizes
-        uses: mikefarah/yq@v4.44.6
+        uses: mikefarah/yq@v4.45.1
         id: sizes
         with:
           cmd: yq -o=json '.sizes' 'benchmark/sources.yaml'
